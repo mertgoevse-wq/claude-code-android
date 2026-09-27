@@ -30,6 +30,17 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     targetCompatibility = JavaVersion.VERSION_17
                 }
 
+                signingConfigs {
+                    loadReleaseSigning(project.rootDir)?.let { material ->
+                        create("release") {
+                            storeFile = material.storeFile
+                            storePassword = material.storePassword
+                            keyAlias = material.keyAlias
+                            keyPassword = material.keyPassword
+                        }
+                    }
+                }
+
                 buildTypes {
                     debug {
                         applicationIdSuffix = ".debug"
@@ -42,6 +53,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                             getDefaultProguardFile("proguard-android-optimize.txt"),
                             "proguard-rules.pro"
                         )
+                        // Null when no keystore.properties is present, which is
+                        // the normal case for a local build. The result is an
+                        // unsigned APK rather than a failed build.
+                        signingConfig = signingConfigs.findByName("release")
                     }
                 }
 
