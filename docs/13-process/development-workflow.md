@@ -7,7 +7,7 @@ The workflow is deliberately small. A project this size fails not from lack of p
 ## 1. One-time setup
 
 ```bash
-git clone https://github.com/<org>/claude-code-android.git
+git clone https://github.com/mertgoevse-wq/claude-code-android.git
 cd claude-code-android
 
 # JDK version is pinned in gradle/libs.versions.toml — use exactly that one.

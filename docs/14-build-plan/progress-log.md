@@ -22,7 +22,7 @@ Rules:
 | Next task | `P0-1` — repository init, `.editorconfig`, `.gitignore`, `LICENSE`, `NOTICE` |
 | Blockers | None |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift) |
-| Open operator actions | Replace `<org>` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push; run `git init` and create the repository; commit this documentation set on a `task/<slug>` branch |
+| Open operator actions | Replace `mertgoevse-wq` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push; run `git init` and create the repository; commit this documentation set on a `task/<slug>` branch |
 | Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. The commit-and-push rule and the no-secrets rule are therefore enforced by hooks and CI, not by a dialog. See `13-process/git-strategy.md` §6 and `13-process/claude-code-instructions.md` §10 |
 
 ---
@@ -88,7 +88,7 @@ R9 (documentation drift) is at full exposure right now: 135 documents exist and 
 **Before the first push**
 
 1. `git init`, then the first commit on a `task/<slug>` branch — the documentation set is the first deliverable, and it should be the first thing in the history.
-2. Replace the `<org>` placeholder in `README.md` and `THIRD_PARTY_NOTICES.md` with the real GitHub organisation. It is written as a placeholder throughout because the organisation does not exist yet; `CLAUDE.md` records the requirement.
+2. Replace the `mertgoevse-wq` placeholder in `README.md` and `THIRD_PARTY_NOTICES.md` with the real GitHub organisation. It is written as a placeholder throughout because the organisation does not exist yet; `CLAUDE.md` records the requirement.
 3. Create the `.claude/` kit (`P0-16` … `P0-19`). It is not optional scaffolding: under `--dangerously-skip-permissions` the hooks are what make "commit and push after every step" true rather than aspirational.
 
 ---

@@ -106,8 +106,8 @@ Rules:
 5. **Link the tag** in the comparison footer at the bottom of the file:
 
 ```markdown
-[unreleased]: https://github.com/<org>/claude-code-android/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/<org>/claude-code-android/releases/tag/v0.4.0
+[unreleased]: https://github.com/mertgoevse-wq/claude-code-android/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mertgoevse-wq/claude-code-android/releases/tag/v0.4.0
 ```
 
 6. **The GitHub release body and this file say the same thing.** Generated notes are edited before they ship; "fix: update stuff" is not a changelog entry.

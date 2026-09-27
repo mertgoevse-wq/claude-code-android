@@ -51,7 +51,7 @@ Two paths, in this order:
 
 ```bash
 # Development, from a clone
-git clone https://github.com/<org>/claude-code-android.git
+git clone https://github.com/mertgoevse-wq/claude-code-android.git
 cd claude-code-android
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
