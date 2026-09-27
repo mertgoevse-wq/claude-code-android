@@ -182,6 +182,17 @@ Scoring: **L**ikelihood and **I**mpact, each 1–5. Exposure is L × I. Anything
 | **Owner** | `05-features/chat-and-streaming.md` |
 | **Residual** | Medium, and it is a deliberate product decision. The user chose display over a cap. |
 
+### R17 — `main` has no server-side protection on the free plan
+
+| Field | Value |
+|---|---|
+| **Exposure** | L3 × I4 = **12** |
+| **Source** | The repository is private, and GitHub gates branch protection and rulesets behind GitHub Pro for private repositories. The API refuses with *"Upgrade to GitHub Pro or make this repository public to enable this feature."* Hard block 2 forbids paying, and hard block 3 forbids making the repository public, so the protection cannot be bought or unlocked. |
+| **Mitigation** | Hard block 4 is enforced at the three layers that do not need a paid plan: the pre-push hook, the CI check on the push workflow, and the `PreToolUse` git hook in `.claude/settings.json`. The root-commit exception is written down. Until CI exists, the operator is the enforcement, and the rule is stated in `CLAUDE.md` at the top of every session. |
+| **Trigger** | A commit lands on `main` that did not arrive through a PR |
+| **Owner** | Maintainer |
+| **Residual** | Medium. A paid plan would close it in one click; the project chose not to pay. Revisit only if the maintainer ever decides the cost of Pro is worth the guarantee — that is a decision for a human, and it would be an amendment to hard block 2, not an agent's call. |
+
 ## Watched, not managed
 
 | # | Risk | L | I | Why it is not managed |
