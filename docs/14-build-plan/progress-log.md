@@ -22,6 +22,8 @@ Rules:
 | Next task | `P0-1` — repository init, `.editorconfig`, `.gitignore`, `LICENSE`, `NOTICE` |
 | Blockers | None |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift) |
+| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**, initialised 2026-09-27. Root commit on `main`; everything after it goes to `task/<slug>` and lands through a PR |
+| Server-side protection | **None available.** Branch protection is GitHub Pro–gated for private repositories, and hard blocks 2 and 3 forbid paying and forbid going public. Hard block 4 rests on the pre-push hook, CI, and the agent git hook. Recorded as R17 |
 | Open operator actions | Replace `mertgoevse-wq` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push; run `git init` and create the repository; commit this documentation set on a `task/<slug>` branch |
 | Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. The commit-and-push rule and the no-secrets rule are therefore enforced by hooks and CI, not by a dialog. See `13-process/git-strategy.md` §6 and `13-process/claude-code-instructions.md` §10 |
 

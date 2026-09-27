@@ -147,6 +147,12 @@ Nothing is batched "until the end of the session". A build that is interrupted m
 
 These hooks are what make "commit and push after every step" true rather than aspirational. A hook that is missing is a task in Phase 0, not a reason to skip the step.
 
+### A gap worth stating plainly
+
+GitHub gates branch protection on private repositories behind a paid plan, and hard blocks 2 and 3 mean the repository stays private and unpaid. So **`main` has no server-side protection**, and hard block 4 is enforced only by the pre-push hook, the CI check, and the agent's git hook.
+
+That is a real reduction in defence, recorded as R17 in `14-build-plan/risk-register.md` rather than glossed over. The compensating control is that a direct push to `main` fails review: the change would arrive without the doc, the test, and the gate that every other change has to pass.
+
 ### Why this is a rule and not a preference
 
 With permissions skipped, the agent has the same reach a human operator has. The commit history is the only durable record of what happened: which gate was red, which blocker was hit, which file was touched by accident. A step that is not committed leaves no evidence, and hard block 5 says nothing is hidden.
