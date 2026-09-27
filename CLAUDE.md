@@ -97,28 +97,11 @@ What that requires of you now, while the code does not exist yet:
 
 ## Design skills
 
-The design skills are installed globally. **Use them. Do not improvise a visual
-direction.** Search `design-library` for the specialist matching the screen's
-actual problem, start from `impeccable`, then apply the specialist.
-
-| Problem | Skill |
-|---|---|
-| General visual and UX pass | `impeccable` |
-| Bland, no personality | `bolder` |
-| Template-looking | `craft`, `redesign-existing-projects` |
-| Too loud | `quieter` |
-| Grey, lifeless | `colorize` |
-| Type unmotivated | `typeset` |
-| Monotonous spacing | `layout` |
-| Too much on screen | `distill` |
-| No motion where motion would explain | `animate` |
-| Pre-ship misalignments | `polish` |
-| Window sizes, foldables, split views | `adapt` |
-| Android patterns, insets, focus | `mobile-android-design`, `edge-to-edge` |
-| Critical review of finished work | `critique`, `design-review` |
-| Guidelines and accessibility | `web-design-guidelines`, `accessibility` |
-| High-end agency feel, anti-generic | `high-end-visual-design` |
-| The README as a page | `website` |
+The design skills are installed globally. **Use them; do not improvise a visual
+direction.** Search `design-library` for the specialist matching the
+screen's actual problem, start from `impeccable`, then apply it. The full
+routing table is `.claude/skills/ui-design/SKILL.md`; the README is a page,
+so it gets `website` and `craft` too.
 
 **Banned aesthetics, no exceptions and no subtle use:** liquid glass,
 glassmorphism, neomorphism, neumorphic elevation, brutalism as a style
@@ -195,7 +178,7 @@ must not present it as a loss.
 | Build | Gradle KTS, version catalog, convention plugins, configuration cache on |
 | Analysis | ktlint, detekt, lint, Kover |
 | Testing | kotlin-test, Turbine, MockK, Robolectric, Compose UI test, Paparazzi |
-| Modules | `shared/{core,domain,data,runtime,orchestration,skills,vcs,ui}`, `androidApp`, `iosApp` (stub) |
+| Modules | `shared/*`, `androidApp`, `iosApp` (stub) — the map is in `docs/02-architecture/module-map.md` |
 
 The repository slug is written `mertgoevse-wq/claude-code-android` throughout these docs because the GitHub organisation does not exist yet. **Replace `mertgoevse-wq` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push**, and search for it again before the first release.
 
@@ -242,17 +225,6 @@ These are enforced in `HardBlockPolicy`, in tests, and at the agent permission l
 ## The plan
 
 Seven phases, in order, each ending green or the build stops. Details in `docs/14-build-plan/phase-plan.md`.
-
-| Phase | Goal | Hard stop when |
-|---|---|---|
-| 0 Foundation | Repo, 135 docs, Gradle, convention plugins, CI, gates, `.claude/` kit | `./gradlew check` green on an empty app |
-| 1 Design system | Tokens, theme, primitives, the animated mark | Every token used; both themes pass contrast |
-| 2 Data and core | Domain, Room, repositories, Keystore secrets | Coverage met; a key round-trips and never appears in a log |
-| 3 Runtime | Claude Code actually runs on the phone | `claude --version` runs and a prompt streams back |
-| 4 Chat and projects | The whole chat experience end to end | The primary E2E journey passes on an emulator |
-| 5 GitHub, skills, runners | Branch, PR, skills, remote offload | A private test repo yields a green branch and an open PR |
-| 6 Verification and self-healing | Verifier, judge, retries, context, self-update | A broken project reaches green within budget |
-| 7 Autonomy, polish, delivery | Background execution, polish, accessibility, README, release | Every §22.2 gate green; a signed release APK exists |
 
 **Phase 3 is a hard stop.** If the engine does not run on a real device, the build stops and reports the blocker. There is no mock, no stub, and no "the UI is ready, the binary comes later".
 
