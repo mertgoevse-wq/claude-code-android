@@ -130,11 +130,46 @@ Banned phrases, in the interface and in the README: "Delve", "Elevate", "Superch
 
 Also banned: exclamation marks in the interface, three-bullet feature lists with no content, and any sentence that would make sense on a completely different product's website.
 
+### 25. No borrowed aesthetic
+
+The visual identity is a **calm, dense, warm work tool**. It is not a fashion.
+These aesthetics are banned outright — not in the main surfaces, not as an
+accent, not "subtly", and not if a design skill suggests them:
+
+| Banned | Why it is banned here |
+|---|---|
+| **Liquid glass, glassmorphism** | Blurred translucency over text. It costs contrast, it is a platform trend rather than a hierarchy, and it dates a developer tool within six months. It also fights the OLED panel on this device class at low brightness |
+| **Neomorphism** | Low-contrast raised surfaces. Fails WCAG AA and is unreadable in sunlight, which is a real constraint for someone reading a diff on a phone outdoors |
+| **Neumorphic elevation on cards** | The same failure as neomorphism: the elevation is fake, so the hierarchy is unreadable |
+| **Brutalism as a style** | Raw borders, terminal-green-on-black, no spacing. This is *correct* inside the terminal pane, which faithfully reproduces a terminal. It is *wrong* on app chrome, where it makes a work tool look unfinished |
+| **Skeuomorphism** — leather, wood, stitching, linen | Not a tool. Dates instantly and signals a demo rather than a product |
+| **Glass blur on a scrolling list** | Motion plus transparency is a legibility bug, not a flourish |
+
+When a design skill produces any of the above, the output is **discarded, not
+softened**. The rules beat the skill. `CLAUDE.md` and the `ui-design` and
+`designer` agent definitions both say so, so the two layers cannot disagree.
+
+### 26. The design skills are mandatory, not optional
+
+Every screen and the README go through the installed design skills. The roster
+and the routing table are in `CLAUDE.md` → "Design skills" and
+`.claude/skills/ui-design/SKILL.md`. In short: search `design-library` for the
+specialist that matches the screen's actual problem, start from `impeccable`,
+then apply the specialist. `craft`, `typeset`, `polish`, `critique`, and
+`design-review` are the quality floor; `bolder`, `quieter`, `colorize`,
+`layout`, `distill`, `animate`, `adapt`, `impeccable`, `craft`,
+`high-end-visual-design`, and `website` are the tools for a specific problem.
+
+A screen with no entry in the `ai-usage-policy.md` ledger is a blocker. The
+ledger is the evidence that the skills were actually used rather than claimed.
+
 ## The review checklist
 
 Run before every UI change is merged. A failure is a rejection, not a nit.
 
 - [ ] Would this screenshot be recognisably this app, and not a generated template?
+- [ ] Is it free of liquid glass, neomorphism, glassmorphism, and brutalism? Brutalism is allowed in the terminal pane only
+- [ ] Does the `ai-usage-policy.md` ledger name the skill used for this screen?
 - [ ] Does every value come from a token?
 - [ ] Is there exactly one primary action?
 - [ ] Does every status carry a glyph and a word, not only a colour?

@@ -91,6 +91,18 @@ One row per section, 16 rows, with the count and the one-line purpose. The reade
 | Tables | Used for genuinely tabular data — install paths, requirements, the doc index. Never for layout |
 | Bold | One emphasis per paragraph. Bold in every bullet is a way of shouting that stops meaning anything |
 
+## 3a. The README gets the design skills too
+
+D27 makes the README a product page, so it goes through the same pass as a
+screen. Use `website` for the page structure, `craft` for the craft rules, and
+`high-end-visual-design` for the anti-generic bar, then hold the result against
+the checklist in section 4 and the aesthetic bans in
+`docs/03-design/anti-slop-rules.md` rule 25 — liquid glass, neomorphism,
+glassmorphism, brutalism, and skeuomorphism are all out.
+
+The README's own row in the `ai-usage-policy.md` ledger names the skills used.
+A README that ships without a row is a blocker, exactly as for a screen.
+
 ## 4. Anti-slop checklist
 
 Run before every README change. A single failure blocks the change.

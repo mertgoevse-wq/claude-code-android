@@ -19,7 +19,7 @@ Rules:
 | Last updated | 2026-09-27 |
 | Build status | Not started. The repository contains the spec and the documentation set only |
 | `./gradlew check` | Not run — no Gradle project exists yet |
-| Next task | `P0-1` — repository init, `.editorconfig`, `.gitignore`, `LICENSE`, `NOTICE` |
+| Next task | `P0-22` — observe an enforcement hook firing in a live session, then `P0-1` → `P0-3` for the Gradle project |
 | Blockers | None |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**, initialised 2026-09-27. Root commit on `main`; everything after it goes to `task/<slug>` and lands through a PR |
@@ -30,6 +30,65 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-27 — The autonomy kit is built (P0-16 … P0-19, P0-21, P0-22)
+
+**Phase:** 0 · **Tasks:** P0-16, P0-17, P0-18, P0-19, P0-21, and half of P0-22
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P0-16 | `.claude/settings.json` | 30 deny entries, 4 hook events, deterministic env, valid JSON |
+| P0-17 | 8 slash commands | `phase-start`, `verify`, `fix`, `ship`, `doc-sync`, `ui-polish`, `release`, `status` |
+| P0-18 | 6 subagents | `architect`, `implementer`, `tester`, `debugger`, `designer`, `reviewer` |
+| P0-19 | 8 project skills | `android-compose`, `kmp-shared`, `runtime-bootstrap`, `ui-design`, `github-safety`, `docs-authoring`, `test-authoring`, `release` |
+| P0-21 | `.gitignore` | Keystores, `local.properties`, build output, local settings |
+| P0-22 | 3 enforcement hooks | `tools/hook_pre_bash.sh`, `hook_post_bash.sh`, `hook_stop.sh` — syntax-checked |
+
+**What was verified**
+
+- `settings.json` parses; all three hooks pass `bash -n`
+- Every `docs/…` path referenced from `.claude/` resolves
+- The seven `.claude/` agent, command, and skill files carry the hard blocks,
+  the layer rules, the coverage gates, and the banned aesthetics, so the
+  enforcement does not live in one file the agent might not read
+
+**What was skipped, and why**
+
+- **P0-22 is half done.** The hooks are written and syntax-checked, but nobody
+  has watched one fire in a live session. Until that happens, commit-after-every-step
+  is a rule with hooks written next to it, not a mechanism. That is the next
+  task, and it is the first thing to verify in the next session.
+- No plugins or MCP servers are configured. They are additive only; the build
+  must succeed with none, so adding one before there is a build to speed up
+  would be ceremony.
+
+**Decisions**
+
+| Decision | Why | Where |
+|---|---|---|
+| The hard blocks live in `settings.json` deny rules **and** in every agent, command, and skill file | The operator runs with `--dangerously-skip-permissions`, and a subagent may not read the file that denies the command. Redundancy across layers is load-bearing here, not bloat | `13-process/code-review.md` CE8 reasoning applied deliberately |
+| Design skills are mandatory, and the banned aesthetics are absolute | A generated screen looks like a template by default. The skills give it a direction; the bans stop a skill from supplying a fashionable one | `03-design/anti-slop-rules.md` rules 25 and 26 |
+| Two models, two jobs: Opus writes documents, the executor implements | Tokens are the scarce resource, and the highest-leverage move is making the document legible to the model that reads it | `CLAUDE.md` → Model routing |
+| The finish line is an APK installed on the Galaxy A56 | A green Gradle output is not a product. The device is where the Snapdragon no-AVF constraint and the real bootstrap are actually proven | `14-build-plan/phase-plan.md` Phase 7 exit |
+
+**Risk register changes**
+
+None. R17 (no server-side branch protection) is unchanged; the hooks added here
+are the compensating control it names, which is why they were written before the
+CI that also compensates for it.
+
+**Blockers**
+
+None.
+
+**Next**
+
+`P0-22` — observe a hook firing in a live session, then `P0-1` … `P0-3` for the
+Gradle project itself.
+
+---
 
 ### 2026-09-27 — Documentation set complete
 

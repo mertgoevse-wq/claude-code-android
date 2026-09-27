@@ -1,0 +1,135 @@
+{
+  "//": "Load-bearing safety layer. The operator runs with --dangerously-skip-permissions, so nothing here may depend on a permission prompt. Everything below is either a hard block, a gate, or a hook that enforces commit-after-every-step. See docs/13-process/git-strategy.md section 6.",
+
+  "env": {
+    "LOG_LEVEL": "info",
+    "CLAUDE_TELEMETRY_DISABLED": "1",
+    "DETERMINISTIC_TESTS": "true",
+    "CI": "false",
+    "GRADLE_OPTS": "-Dorg.gradle.configuration-cache=true -Dorg.gradle.caching=true",
+    "KOTLIN_DAEMON_JVM_OPTIONS": "-Xmx3g"
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew:*)",
+      "Bash(./tools/ci.sh)",
+      "Bash(./tools/format.sh)",
+      "Bash(python3 tools/check_doc_manifest.py:*)",
+      "Bash(python3 tools/check_source_manifest.py:*)",
+      "Bash(python3 tools/check_no_android_imports_in_shared.py:*)",
+      "Bash(bash scripts/check-no-secrets.sh:*)",
+      "Bash(bash scripts/check-no-analytics.sh:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout -b:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(adb devices:*)",
+      "Bash(adb install:*)",
+      "Read(//**)"
+    ],
+
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push origin main:*)",
+      "Bash(git push origin master:*)",
+      "Bash(git push origin develop:*)",
+      "Bash(git push --delete:*)",
+      "Bash(git push origin :*)",
+      "Bash(git branch -D:*)",
+      "Bash(git tag -d:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -f:*)",
+      "Bash(git checkout main:*)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit --amend:*)",
+      "Bash(git add -A:*)",
+      "Bash(rm:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh repo edit --visibility public:*)",
+      "Bash(gh release create:*)",
+      "Bash(gh api --method DELETE:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(ssh:*)",
+      "Bash(npm publish:*)",
+      "Bash(brew install:*)",
+      "Bash(pip install:*)",
+      "Bash(apt install:*)",
+      "Bash(sudo:*)",
+      "Read(./**/.env)",
+      "Read(./**/*.jks)",
+      "Read(./**/*.keystore)"
+    ]
+  },
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f docs/14-build-plan/progress-log.md && head -40 docs/14-build-plan/progress-log.md",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./tools/format.sh --staged 2>/dev/null || true",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tools/hook_pre_bash.sh",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tools/hook_post_bash.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tools/hook_stop.sh",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

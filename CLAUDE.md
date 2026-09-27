@@ -95,6 +95,88 @@ What that requires of you now, while the code does not exist yet:
 - The gate is a single command with a documented threshold, so "is it done" is never a judgement call.
 - No invented versions, quotas, checksums, or APIs. An honest `TBD — verify at build time` is a valid deliverable; a plausible number is a defect.
 
+## Design skills
+
+The design skills are installed globally. **Use them. Do not improvise a visual
+direction.** Search `design-library` for the specialist matching the screen's
+actual problem, start from `impeccable`, then apply the specialist.
+
+| Problem | Skill |
+|---|---|
+| General visual and UX pass | `impeccable` |
+| Bland, no personality | `bolder` |
+| Template-looking | `craft`, `redesign-existing-projects` |
+| Too loud | `quieter` |
+| Grey, lifeless | `colorize` |
+| Type unmotivated | `typeset` |
+| Monotonous spacing | `layout` |
+| Too much on screen | `distill` |
+| No motion where motion would explain | `animate` |
+| Pre-ship misalignments | `polish` |
+| Window sizes, foldables, split views | `adapt` |
+| Android patterns, insets, focus | `mobile-android-design`, `edge-to-edge` |
+| Critical review of finished work | `critique`, `design-review` |
+| Guidelines and accessibility | `web-design-guidelines`, `accessibility` |
+| High-end agency feel, anti-generic | `high-end-visual-design` |
+| The README as a page | `website` |
+
+**Banned aesthetics, no exceptions and no subtle use:** liquid glass,
+glassmorphism, neomorphism, neumorphic elevation, brutalism as a style
+(allowed inside the terminal pane only, which faithfully reproduces a
+terminal), and skeuomorphism. When a skill produces one, discard the output
+rather than softening it. `docs/03-design/anti-slop-rules.md` rules 25 and 26
+have the reasons, and they beat any skill's suggestion.
+
+Every screen, and the README, gets a row in the table in
+`docs/13-process/ai-usage-policy.md` naming the skill used. A screen with no row
+is a blocker.
+
+## Model routing
+
+Two models, two jobs. Splitting them is a token decision, not a hierarchy.
+
+| Model | Does | Does not |
+|---|---|---|
+| **Opus** | Optimises the documents: the architecture, the contracts, the screen specs, the design system, the README, the review of anything subtle | Write bulk implementation |
+| **Sonnet** | Executes: implements against the documents, writes the tests, runs the gates, commits, pushes | Change a contract on its own initiative |
+
+The rule that makes it work: **Opus makes the documents legible to a weaker
+reader, so Sonnet never has to infer a contract.** A task that needs a decision
+goes back to Opus, which writes the decision down. A task that only needs the
+decision applied goes to Sonnet.
+
+**Tokens are the scarce resource.** Concretely:
+
+- Do not re-run a green gate. The `PostToolUse` hook says so.
+- Do not read a document you were not told to read. The "Start here" table is
+  the routing.
+- Do not search the whole repository for something the task named. Read the
+  named file.
+- Do not re-summarise what a previous session already recorded in the progress
+  log. Read it once, continue.
+- Subagents run in parallel when the dependency graph says they are
+  independent. That is the cheapest way to spend tokens.
+
+## One-shot, and what "finished" means
+
+The build runs in one autonomous session across all seven phases. It stops
+only when the deliverable exists and runs:
+
+- `./gradlew assembleDebug` and `./gradlew check` green
+- a signed release APK built and **installed on the Galaxy A56**
+- the app launched on that device, the runtime bootstrap reaching `READY`, and
+  `claude --version` running there
+- a task executed on a private test repo producing a green branch and an open PR
+
+A green Gradle output is not a finish line. The deliverable is an APK that is
+installed and running on the device. If the device is unreachable, say so, name
+the `adb` command the operator must run, and keep the work pushed so it can be
+resumed — but do not report the build as finished.
+
+The Galaxy A56 is a Snapdragon device, so the experimental AVF virtual-machine
+profile is unavailable upstream. That is expected, not a defect, and the app
+must not present it as a loss.
+
 ## Versions
 
 **Never invent a version number.** Every version is pinned in `gradle/libs.versions.toml` and recorded with its lookup date in `docs/10-build/dependency-versions.md`. If you need a version that is not there: look it up, pin it, record the date, and say where you looked. The same rule applies to free-tier quotas, checksums, API shapes, and licences. A plausible guess is a defect with a citation.
