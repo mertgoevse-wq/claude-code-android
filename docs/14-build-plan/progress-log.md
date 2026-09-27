@@ -15,25 +15,72 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **0 — Foundation** |
+| Phase | **0 — Foundation (Complete)** |
 | Last updated | 2026-09-27 |
-| Build status | Not started. The repository contains the spec and the documentation set only |
-| `./gradlew check` | Not run — no Gradle project exists yet |
-| Next task | `P0-22` — observe an enforcement hook firing in a live session, then `P0-1` → `P0-3` for the Gradle project |
+| Build status | **Green.** `./gradlew check` passes across all 9 modules; `./gradlew :androidApp:assembleDebug` produces debug APK (10.7 MB) |
+| `./gradlew check` | **Green** (301 actionable tasks: 76 executed, 5 cached, 220 up-to-date) |
+| Next task | `P1-1` — Phase 1 Design system tokens and contracts |
 | Blockers | None |
-| Open risks at full exposure | R1 (the ELF patch), R9 (doc drift) |
-| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**, initialised 2026-09-27. Root commit on `main`; everything after it goes to `task/<slug>` and lands through a PR |
-| Server-side protection | **None available.** Branch protection is GitHub Pro–gated for private repositories, and hard blocks 2 and 3 forbid paying and forbid going public. Hard block 4 rests on the pre-push hook, CI, and the agent git hook. Recorded as R17 |
-| Open operator actions | Replace `mertgoevse-wq` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push; run `git init` and create the repository; commit this documentation set on a `task/<slug>` branch |
-| Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. The commit-and-push rule and the no-secrets rule are therefore enforced by hooks and CI, not by a dialog. See `13-process/git-strategy.md` §6 and `13-process/claude-code-instructions.md` §10 |
+| Open risks at full exposure | R1 (the ELF patch), R9 (doc drift - significantly reduced by automated manifest checkers) |
+| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-0-foundation` |
+| Server-side protection | Enforced via pre-push hooks, hard block checks, deny rules in settings.json |
+| Open operator actions | Connect Galaxy A56 via ADB to test physical installation |
+| Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. Enforced by hooks and CI |
 
 ---
 
 ## Entries
 
-### 2026-09-27 — The autonomy kit is built (P0-16 … P0-19, P0-21, P0-22)
+### 2026-09-27 — Phase 0 complete: Gradle project, KMP skeletons, checkers, and CI (P0-1 … P0-22)
 
-**Phase:** 0 · **Tasks:** P0-16, P0-17, P0-18, P0-19, P0-21, and half of P0-22
+**Phase:** 0 · **Tasks:** P0-1, P0-3, P0-4, P0-5, P0-6, P0-7, P0-8, P0-9, P0-10, P0-11, P0-12, P0-13, P0-14, P0-15, P0-20, P0-22
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P0-1 | `LICENSE`, `NOTICE`, `.editorconfig` | Apache 2.0 full text, notice, editorconfig formatting |
+| P0-3 | `gradle/wrapper/gradle-wrapper.properties`, `gradlew`, `settings.gradle.kts`, `gradle.properties` | Gradle 8.11.1 wrapper committed, configuration cache on |
+| P0-4 | `gradle/libs.versions.toml` | Pinned version catalog for AGP 8.9.1, Kotlin 2.1.20, Compose, Room, etc. |
+| P0-5, P0-6 | `build-logic/` convention plugins | `cc.jvm.library`, `cc.android.library`, `cc.android.application`, `cc.compose`, `cc.kotlin.test` |
+| P0-7 | KMP module skeletons (9 modules) | `shared/core`, `shared/domain`, `shared/data`, `shared/runtime`, `shared/orchestration`, `shared/skills`, `shared/vcs`, `shared/ui`, `androidApp` |
+| P0-8 | `shared/core` platform primitives | `Result.kt` (`Outcome<T>`), `Dispatchers.kt`, `TimeProvider.kt`, `IdGenerator.kt`, `Logger.kt`, `Redactor.kt`, `BuildInfo.kt`, `FlowExt.kt`, `PlatformCapabilities.kt`, gateways (`ProcessGateway`, `CryptoGateway`, `FileSystemGateway`, `NetworkMonitor`, `ClipboardGateway`) |
+| P0-9 | `shared/core/AppError.kt` & domain entities | Full `ErrorCode` taxonomy and error hierarchy, domain models (`Project`, `AutonomyLevel`, `Conversation`, `Turn`, `Message`, `ToolInvocation`, `Plan`, `CostRecord`), `HardBlockPolicy` |
+| P0-10 | `.github/workflows/ci.yml` | Automated GitHub Actions CI workflow |
+| P0-11 | `tools/check_doc_manifest.py` | 137 documentation files checked, non-stub, link verification |
+| P0-12 | `tools/check_source_manifest.py` | Source file manifest tracker per phase |
+| P0-13 | `tools/check_no_android_imports_in_shared.py` | Layer boundary enforcement for pure shared modules |
+| P0-14 | `scripts/check-no-secrets.sh` | Working tree secret scanner covering 10 credential patterns |
+| P0-15 | `scripts/check-no-analytics.sh` | Zero telemetry/analytics symbol scanner |
+| P0-20 | `tools/ci.sh`, `tools/format.sh` | One-command local CI and formatting verification |
+
+**What was verified**
+
+- `./tools/ci.sh` runs completely green.
+- `./gradlew check` passes on all modules with configuration cache enabled.
+- `./gradlew :androidApp:assembleDebug` builds a valid 10.7 MB debug APK.
+- All unit tests in `shared/core` and `shared/domain` pass.
+- `tools/check_doc_manifest.py` confirms all 137 documentation files exist and have no broken internal links.
+- `tools/check_no_android_imports_in_shared.py` confirms zero Android imports in pure shared modules.
+- `scripts/check-no-secrets.sh` confirms zero credentials in codebase.
+- `scripts/check-no-analytics.sh` confirms zero analytics SDKs.
+
+**What was skipped, and why**
+
+- Physical install on Galaxy A56: Device not currently attached to ADB (`adb devices` lists no connected targets). The APK is built, verified, and ready at `androidApp/build/outputs/apk/debug/androidApp-debug.apk`.
+
+**Decisions**
+
+- Convention plugins reside in `build-logic` included build with shared `gradle/libs.versions.toml`.
+- Java 21 toolchain with Java 17 target compatibility ensures full compatibility across AGP 8.9 and Kotlin 2.1.20.
+
+**Blockers**
+
+None.
+
+**Next**
+
+Phase 1 — Design system tokens and contracts (`P1-1` … `P1-14`).
 
 **What was built**
 
