@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The resource shrinker cannot see that a font is used.
+
+  `Font(resId = R.font.inter_variable)` passes a resource id as a plain Int into
+  Compose's `Font`, so the shrinker finds no reference and strips both fonts from
+  the release build. The result is an app that looks correct in debug and
+  silently falls back to the system face in release — a 258 KB APK where the
+  typography contract does not hold.
+
+  This file is the documented remedy. Without it, `isShrinkResources = true`
+  ships an app whose type scale is not the one in docs/03-design/design-tokens.md.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@font/*" />

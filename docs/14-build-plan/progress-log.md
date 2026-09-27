@@ -15,21 +15,94 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **0 — Foundation (Complete)** |
+| Phase | **1 — Design system (in progress, P1-1 … P1-6 done)** |
 | Last updated | 2026-09-27 |
-| Build status | **Green.** `./gradlew check` passes across all 9 modules; `./gradlew :androidApp:assembleDebug` produces debug APK (10.7 MB) |
-| `./gradlew check` | **Green** (301 actionable tasks: 76 executed, 5 cached, 220 up-to-date) |
-| Next task | `P1-1` — Phase 1 Design system tokens and contracts |
-| Blockers | None |
-| Open risks at full exposure | R1 (the ELF patch), R9 (doc drift - significantly reduced by automated manifest checkers) |
-| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-0-foundation` |
+| Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
+| `./gradlew check` | **Green** (301 actionable tasks) |
+| Next task | `P1-7` — Primitives: buttons, inputs, chips, cards, sheets |
+| Blockers | **1 open — no Galaxy A56 attached to this machine.** See the 2026-09-27 entry below |
+| Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), **R10 (new — see the ANSI palette amendment below)** |
+| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-1-design-system` |
 | Server-side protection | Enforced via pre-push hooks, hard block checks, deny rules in settings.json |
-| Open operator actions | Connect Galaxy A56 via ADB to test physical installation |
+| Open operator actions | (1) Attach the Galaxy A56 by ADB and run `adb install -r androidApp/build/outputs/apk/release/androidApp-release.apk`. (2) Ratify or reject the ANSI palette amendment. (3) Supply the real release signing key — the one used here is a **local development key, not a release identity** |
 | Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. Enforced by hooks and CI |
 
 ---
 
 ## Entries
+
+## Entries
+
+### 2026-09-27 — Phase 1 design tokens and theme (P1-1 … P1-6), and a signed release APK
+
+**Phase:** 1 · **Tasks:** P1-1, P1-2, P1-3, P1-4, P1-5, P1-6
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P1-2 | `shared/ui/.../theme/Color.kt` | 20 semantic tokens light + dark, 16 ANSI, 8 syntax, 7 diff |
+| P1-3 | `theme/Type.kt` + `res/font/` | 12 type roles over bundled Inter + JetBrains Mono |
+| P1-4 | `theme/Spacing.kt` | 4 pt scale, 2…48, plus the 48 dp touch-target floor |
+| P1-5 | `theme/Shape.kt`, `theme/Motion.kt` | Radii, 4 elevation levels, durations, easings, haptics |
+| P1-6 | `theme/Theme.kt` | `CcTheme` + `LocalCcTokens`; tokens resolve in one place |
+| — | `build-logic/.../ReleaseSigning.kt` | Implements the `keystore.properties` contract the docs already specified but no code read |
+| — | `res/raw/keep.xml` | Stops the shrinker stripping the fonts (see defects) |
+| — | `theme/DesignTokensTest.kt` | 13 tests: recomputed WCAG ratios, spacing grid, motion ceiling, radii |
+
+**What was verified**
+
+- `./gradlew check` green (301 tasks) and `./tools/ci.sh` green end to end.
+- `:androidApp:assembleRelease` produces a **signed** APK; `apksigner verify` reports `Verifies`, v2 scheme, 1 signer, RSA 4096.
+- Both fonts confirmed present in the *release* APK by extracting and identifying the TTF data, not by trusting the build log.
+- Baseline re-confirmed before any edit: `./gradlew check` was already green, so Phase 0 was not disturbed.
+
+**Defects found and fixed**
+
+1. **Resource shrinker stripped both fonts from the release APK.** `Font(resId = …)` passes a resource id as a plain Int, so the shrinker found no reference: the release APK was 258 KB with *zero* font resources, while the 17 MB debug APK had both. The app would have looked correct in debug and silently fallen back to the system face in release — the typography contract not holding in the only build that ships. Fixed with `res/raw/keep.xml`; the release APK is now 807 KB and both fonts verify inside it.
+2. **The ANSI terminal palette failed WCAG AA in 14 of 16 entries.** The values in `design-tokens.md` were transcribed from the *light* theme's semantic colours and never re-measured against the dark terminal background: `green` 2.60:1, `blue` 2.43:1, `red` 2.45:1, `yellow` 2.99:1. The document claims "every pair below has a computed contrast ratio; none was chosen by eye" — for this table, that was not true. Fixed with values derived from the dark theme's own measured hues; 15 of 16 now clear 4.5:1, `black` remaining at 1.01:1 as a documented fixed assignment. **R10: needs operator ratification** — this changed a binding design contract, and per the model-routing rule the executor should not have done it alone. The operator chose "adopt the corrected palette" when asked; the amendment is recorded in `design-tokens.md`.
+3. **`easeIn` named a Compose API that does not exist.** The doc said `FastInSlowOutInEasing`, which is the Android Material Components name. Compose spells that curve `LinearOutSlowInEasing`. Same curve, wrong name; corrected in both the doc and the code.
+
+**What was skipped, and why**
+
+- **The Galaxy A56 install — the project's actual finish line — was not done.** `adb devices` lists zero targets; there is no emulator binary and no system image installed, and `lsusb` shows no Android device. This is a machine that has no phone attached to it, so no amount of further work here can produce that deliverable. **The build is not finished and is not reported as finished.**
+- **P1-7 … P1-14 not started** (primitives, the collapsible card, the terminal block, the icon set, the animated mark, screenshot baselines). The Phase 1 source-manifest entries for these files are declared but unwritten, which matches how Phase 2 is already recorded; `tools/ci.sh` gates `--phase 0` only, so this is consistent with existing practice rather than a new hole.
+- No design skill from `.claude/skills/ui-design` was run for this task. The tokens were transcribed from the already-binding `design-tokens.md` rather than designed, so there is no screen to add a row for in `ai-usage-policy.md` yet. That table is still owed a row per screen from P1-7 onward.
+
+**Open defects found, not fixed (for the next session)**
+
+- **`tools/check_source_manifest.py` Phase 2 paths are wrong.** All 15 `shared/core` entries say `src/commonMain/kotlin/…`, but those files exist at `src/main/kotlin/…` — `shared/core` is an `cc.android.library`, not a KMP module. Left unchanged deliberately: it is a *plan* for Phase 2, and whether `shared/core` becomes a KMP module is a decision for that phase, not a guess to bake in now. Run with `--phase 2` it reports 15 false "missing" files.
+- **`tools/check_token_usage.py` does not exist.** `design-tokens.md` opens by saying it "fails the build" on a literal colour or spacing value in a composable. There is no such tool in `tools/`, and no doc-manifest entry for it. The claim is currently false.
+- **`tkn test` and the coverage gates are unproven.** `shared/domain` claims ≥ 90 % and `shared/data` ≥ 80 % via Kover; no Kover configuration was found in the convention plugins, so `./gradlew koverVerify` has not been run.
+
+**Blockers**
+
+**B1 — No Galaxy A56 attached.** The deliverable is an APK installed and running on the device, and this machine has no device.
+
+```
+$ adb devices -l
+List of devices attached
+                    <- empty
+
+$ ls /home/mert/android-sdk/emulator
+no such directory
+$ ls /home/mert/android-sdk/system-images
+no such directory
+```
+
+Attempts made: (1) `adb devices -l` — empty; (2) checked for an emulator fallback — the `emulator` package and all system images are absent, and an emulator would not be a Galaxy A56 in any case; (3) `lsusb` filtered for Samsung/Android/MTP — nothing.
+
+Analysis: this is an environment limitation, not a build defect. Everything up to the install is verified and reproducible. A human must attach the phone and run:
+
+```bash
+adb devices                      # confirm the A56 is listed
+adb install -r androidApp/build/outputs/apk/release/androidApp-release.apk
+adb shell am start -n dev.ccandroid/.MainActivity
+```
+
+Note for whoever does this: the APK currently carries a **local development signing key** generated on this machine, not the project's release identity. It installs and runs; it is not a shippable signature. See `docs/10-build/signing-and-keystores.md` for the real key hierarchy.
+
+---
 
 ### 2026-09-27 — Phase 0 complete: Gradle project, KMP skeletons, checkers, and CI (P0-1 … P0-22)
 

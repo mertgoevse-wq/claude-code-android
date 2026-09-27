@@ -70,16 +70,31 @@ Full values and the measurement method are in `color-and-contrast.md`. Every pai
 
 Both themes render the terminal on `terminalBackground` with the dark ANSI palette. An ANSI palette has fixed assignments — "white" is light, "black" is dark — and a light terminal background makes the light ANSI colours invisible (white on light: 1.04:1). Inverting the palette produces colours that do not match what a shell expects. So: the terminal does not follow the theme. This is a deliberate decision and it is visible in the screenshots.
 
-| ANSI | Value | ANSI | Value |
-|---|---|---|---|
-| `black` | `#1F1E1B` | `brightBlack` | `#6E6B65` |
-| `red` | `#A63228` | `brightRed` | `#B23A2F` |
-| `green` | `#2F6B45` | `brightGreen` | `#3F7D58` |
-| `yellow` | `#8A6114` | `brightYellow` | `#9A6B15` |
-| `blue` | `#2F5C96` | `brightBlue` | `#3A6EA5` |
-| `magenta` | `#8A4380` | `brightMagenta` | `#A05296` |
-| `cyan` | `#1F6A6E` | `brightCyan` | `#2F8085` |
-| `white` | `#D8D5CD` | `brightWhite` | `#F2F0EA` |
+| ANSI | Value | Ratio | ANSI | Value | Ratio |
+|---|---|---|---|---|---|
+| `black` | `#1F1E1B` | 1.01 † | `brightBlack` | `#9C9891` | 5.75 |
+| `red` | `#E8796B` | 5.81 | `brightRed` | `#F29A8E` | 7.70 |
+| `green` | `#6FBE8C` | 7.41 | `brightGreen` | `#8FD3A6` | 9.47 |
+| `yellow` | `#D9A94A` | 7.65 | `brightYellow` | `#E8C46B` | 9.87 |
+| `blue` | `#79AEE0` | 7.04 | `brightBlue` | `#9CC3E8` | 8.96 |
+| `magenta` | `#D79AD2` | 7.43 | `brightMagenta` | `#E6B6E2` | 9.56 |
+| `cyan` | `#7FD4D8` | 9.69 | `brightCyan` | `#9FE2E6` | 11.40 |
+| `white` | `#D8D5CD` | 11.27 | `brightWhite` | `#F2F0EA` | 14.50 |
+
+Ratios are against `terminalBackground` (`#1F1F1C`).
+
+† **`black` is a deliberate exception.** ANSI assignments are fixed — "black"
+means black — so ANSI black on a dark terminal is near-invisible, and every real
+terminal has exactly this property. The renderer falls back to `white` when an
+ANSI colour would be unreadable. It is an assignment, not an oversight.
+
+**Amendment, 2026-09-27.** This table previously held a palette transcribed from
+the *light* theme's semantic colours (`red #A63228`, `green #2F6B45`, and so on)
+and never re-measured against the dark terminal background. Measured, 14 of its
+16 entries were below AA — `green` at 2.60:1, `blue` at 2.43:1, `yellow` at
+2.99:1. The values above are derived from the dark theme's own measured hues and
+every entry except `black` now clears 4.5:1. `DesignTokensTest` recomputes all
+sixteen ratios, so this cannot regress silently.
 
 ### Syntax highlighting
 
@@ -199,11 +214,17 @@ Full spec in `motion.md`.
 | `slow` | 320 ms | Screen transition, mark state change |
 | `ambient` | 2.8 s loop | The mark at idle |
 | `easeOut` | `FastOutSlowInEasing` | Anything entering |
-| `easeIn` | `FastInSlowOutEasing` | Anything leaving |
+| `easeIn` | `LinearOutSlowInEasing` † | Anything leaving |
 | `easeInOut` | `FastOutSlowInEasing` | Anything moving within |
 | `emphasized` | spring, damping 0.7, stiffness 380 | The mark's expression changes |
 
 **No animation exceeds 320 ms except the mark's idle loop.** A user waiting for a result will perceive a long transition as a hang.
+
+† **Amendment, 2026-09-27.** This row previously named `FastInSlowOutEasing`,
+which is the Android Material Components name and **does not exist in Compose**.
+Compose spells the same accelerate curve `LinearOutSlowInEasing`, which is what
+`CcMotion.easeIn` now uses. The curve is unchanged; only the name was wrong.
+`easeOut` and `easeInOut` are both `FastOutSlowInEasing` as specified.
 
 ---
 
