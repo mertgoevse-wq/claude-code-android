@@ -1,0 +1,47 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+.cxx/
+
+# Keystores and signing material — never committed (10-build/signing-and-keystores.md)
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Secrets of any kind (11-operations/security-threat-model.md, hard block)
+.env
+.env.*
+*.pem
+secrets.json
+google-services.json
+
+# IDE
+.idea/
+*.iml
+.kotlin/
+.kotlin
+.DS_Store
+
+# Claude Code: local settings are checkout-local, the shared kit is tracked
+.claude/settings.local.json
+
+# Generated at runtime, never source
+filesDir/
+*.log
+diagnostics-*.zip
+cclog.json
+local.state.json
+
+# Exported artifacts the app writes
+*.diff
+*.patch
