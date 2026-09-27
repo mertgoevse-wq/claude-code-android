@@ -114,6 +114,51 @@ Then stop. Do not start the next task. Do not approximate the missing piece. Do 
 
 A blocker is a legitimate outcome. Reporting one accurately is the correct behaviour, and it is recorded as a success of the build process, not a failure of it.
 
+## 9a. Model routing — two models, two jobs
+
+Splitting the work is a token decision, not a hierarchy.
+
+| Model | Does | Does not |
+|---|---|---|
+| **Opus** | Optimises the documents: architecture, contracts, screen specs, the design system, the README, and reviews of anything subtle | Write bulk implementation |
+| **Sonnet** | Executes against the documents: implements, writes tests, runs gates, commits, pushes | Change a contract on its own initiative |
+
+The rule that makes it work: **Opus makes the documents legible to a weaker
+reader, so the executor never has to infer a contract.** A task that needs a
+decision goes back to Opus, which writes the decision down. A task that only
+needs the decision applied goes to the executor. Optimising a document for the
+model that will *read* it is the highest-leverage token move in the project.
+
+Spend tokens deliberately: do not re-run a green gate, do not read a document
+you were not routed to, do not search the repository for something the task
+named, and do not re-summarise what the progress log already records.
+
+## 9b. One-shot, and the actual finish line
+
+All seven phases run in one autonomous session, in order. The build stops when
+the deliverable exists and runs — and the deliverable is an **APK installed and
+running on the Galaxy A56**, not a green Gradle output.
+
+Before declaring the build finished:
+
+- `./gradlew assembleDebug` and `./gradlew check` green
+- a signed release APK built, then `adb install -r` onto the Galaxy A56
+- the app launched there, the bootstrap reaching `READY`, `claude --version`
+  running, a headless prompt streaming back
+- a task on a private test repo producing a green branch and an open PR
+
+The A56 is a Snapdragon device, so the experimental AVF profile is unavailable
+upstream. That is expected and is not reported as a failure.
+
+If the device is unreachable, the correct output is: the state reached, the
+exact `adb` command the operator must run, and everything pushed so the work can
+be resumed. **Reporting the build as finished with a missing device is hard
+block 5.**
+
+Every step is committed and pushed, so a session that runs out of context or
+tokens leaves a remote branch another model can continue from. That is the
+whole reason the git rule exists.
+
 ## 10. The autonomy kit
 
 | File | What it is for |

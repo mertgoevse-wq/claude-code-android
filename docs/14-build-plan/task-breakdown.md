@@ -32,13 +32,13 @@ Estimates are in hours of focused work and are **rough**. They exist to make the
 | P0-13 | `tools/check_no_android_imports_in_shared.py` | S | P0-7 | Fails on a deliberate violation |
 | P0-14 | `scripts/check-no-secrets.sh` | S | P0-1 | Fails on a planted key |
 | P0-15 | `scripts/check-no-analytics.sh` | S | P0-1 | Fails on a planted SDK symbol |
-| P0-16 | `.claude/settings.json` with permissions, deny rules, hooks, env | M | P0-10 | A denied command is actually denied; the `Stop`, `SessionStart`, and `PostToolUse` hooks that enforce commit-after-every-step exist and fire |
-| P0-17 | 8 slash commands | M | P0-16 | Each runs against this repository |
-| P0-18 | 6 subagents | M | P0-16 | Each follows its contract in `13-process/claude-code-instructions.md` |
-| P0-19 | 8 project skills | M | P0-16 | Each is loadable and its rules are followed |
+| P0-16 | `.claude/settings.json` with permissions, deny rules, hooks, env | M | P0-10 | **Built.** 30 deny entries, four hook events, valid JSON. A denied command is actually denied; the hooks fire. Verify on a real session |
+| P0-17 | 8 slash commands | M | P0-16 | **Built.** phase-start, verify, fix, ship, doc-sync, ui-polish, release, status |
+| P0-18 | 6 subagents | M | P0-16 | **Built.** architect, implementer, tester, debugger, designer, reviewer |
+| P0-19 | 8 project skills | M | P0-16 | **Built.** android-compose, kmp-shared, runtime-bootstrap, ui-design, github-safety, docs-authoring, test-authoring, release |
 | P0-20 | `tools/ci.sh`, `tools/format.sh` | S | P0-10 | Both run green locally |
-| P0-21 | `.gitignore` covering build output, `local.properties`, keystores, `.claude/settings.local.json` | S | P0-1 | A planted key file and a `build/` dir both stay untracked |
-| P0-22 | Wire the commit-and-push loop: `git add -p` staging, pre-push secret scan, branch guard, `Stop` hook | M | P0-16, P0-21 | Under `--dangerously-skip-permissions`, a task's commit reaches the remote branch without a human |
+| P0-21 | `.gitignore` covering build output, `local.properties`, keystores, `.claude/settings.local.json` | S | P0-1 | **Built.** Committed in the root commit; no keystore, `local.properties`, or build output is tracked |
+| P0-22 | Wire the commit-and-push loop: `git add -p` staging, pre-push secret scan, branch guard, `Stop` hook | M | P0-16, P0-21 | **Hooks written** (`tools/hook_pre_bash.sh`, `hook_post_bash.sh`, `hook_stop.sh`), syntax-checked. Not yet observed firing in a live session — that is the remaining half |
 
 ## Phase 1 — Design system
 

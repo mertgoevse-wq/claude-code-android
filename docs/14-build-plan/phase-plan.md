@@ -209,7 +209,7 @@ The rule that makes the plan mean anything: **a phase that is not green is not d
 |---|---|
 | Goal | Everything a person needs to trust it and install it |
 | Entry | Phase 6 green |
-| Exit | Every gate in spec §22.2 is green, the README passes its own checklist, and a signed release APK exists |
+| Exit | Every gate in spec §22.2 is green, the README passes its own checklist, and a signed release APK is **installed and running on the Galaxy A56** |
 
 **Work**
 
@@ -226,7 +226,10 @@ The rule that makes the plan mean anything: **a phase that is not green is not d
 **Exit criteria**
 
 - ☐ Every §22.2 gate green
-- ☐ A signed release APK from a fresh clone
+- ☐ A signed release APK built from a fresh clone
+- ☐ `adb install -r` succeeds on the **Galaxy A56** and the app launches
+- ☐ On that device: the bootstrap reaches `READY`, `claude --version` runs, and a headless prompt streams back
+- ☐ On that device: a task on a private test repo produces a green branch and an open PR
 - ☐ The README passes its own 12-point checklist
 - ☐ The E2E journeys pass on a physical device, not only an emulator
 - ☐ A non-technical user completes the full flow unaided — this is the project's definition of done
