@@ -45,3 +45,10 @@ local.state.json
 # Exported artifacts the app writes
 *.diff
 *.patch
+
+# /brag — the skill's bundled music and SFX are 17 MB of third-party media.
+# The skill's instructions, references, and scripts ARE tracked; the media is
+# fetched by the installer. See docs/12-delivery/release-checklist.md section 9.
+.agents/skills/*/assets/
+brag-output/
+node_modules/

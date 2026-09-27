@@ -145,6 +145,45 @@ These are the same gates as `claude-code-android-spec.md` §22.2, and a red one 
 
 ## 9. After the release
 
+### 9.1 The launch video — `/brag`
+
+**What it is, and what it is not.** `/brag` is a Claude Code skill from
+`latent-spaces/brag` that renders a short launch video from the finished
+project. It is a **marketing asset generated after the build**. It is not a
+build dependency, it ships nothing into the APK, and no gate depends on it. A
+failure here does not fail a release.
+
+```bash
+npx skills add https://github.com/latent-spaces/brag --skill brag
+# then, from the finished project directory:
+claude --dangerously-skip-permissions "let's /brag"
+```
+
+It writes to `brag-output/`: the plan, a composition brief, the share copy, and
+`brag.mp4`.
+
+**Prerequisites, verified rather than assumed:**
+
+| Requirement | State at 2026-09-27 | Note |
+|---|---|---|
+| Node.js 22 or newer | **present** — v24.21.0 | Satisfied |
+| FFmpeg on `PATH` | **MISSING** | The operator must install it. `npx hyperframes doctor` reports the rest |
+| The `skills` CLI | present — 1.5.26 | Satisfied |
+| A finished project with real screenshots | not yet — arrives with the APK | Run this last |
+
+**The 17 MB question.** The installer's bundled music and sound effects are
+third-party media, and their licence is not yet recorded in
+`THIRD_PARTY_NOTICES.md` — so they are **not** committed. The skill's
+`SKILL.md`, `references/`, and `scripts/` are tracked, which is what another
+model needs to reproduce the step. The media comes back with the one-line
+install above. If the media licences are looked up and added to the notices, the
+assets can be vendored instead; until then, fetching beats vendoring an
+unreviewed licence.
+
+### 9.2 The rest
+
+Within 24 hours:
+
 Within 24 hours:
 
 - ☐ `15-appendix/changelog.md` published with the tag.
