@@ -95,7 +95,7 @@ These are enforced in three places — `HardBlockPolicy`, the agent permission l
 | 1 | Never delete | No `rm` of a tracked file without a documented reason in the commit body; no branch or tag deletion; no `git push --delete`; no `gh repo delete`; no force-push to a shared branch |
 | 2 | Never spend money | No paid API key, no subscription, no paid tier, no purchase. A configuration that would cost money is refused by the app and must not be committed |
 | 3 | Never make anything public | Private repositories only. A commit that changes a repo to public, or a release that publishes an artefact publicly, is a blocker requiring an explicit human decision |
-| 4 | Never push to the default branch | Every push goes to a task branch. CI enforces it; the pre-push hook enforces it locally; the permission layer denies the command to an agent |
+| 4 | Never push to the default branch | Every push goes to a task branch. CI enforces it; the pre-push hook enforces it locally; the permission layer denies the command to an agent. The repository's root commit is the single documented exception, recorded in §6 |
 | 5 | Never hide anything | No squashed-away debugging, no deleted log lines, no `--no-verify`, no skipped test turned green by deletion. A failing test is left failing and reported |
 
 ### Force-push
@@ -128,6 +128,7 @@ Nothing is batched "until the end of the session". A build that is interrupted m
 ### Push rules
 
 - Every push targets `task/<slug>`. The default branch is never a push target (hard block 4).
+- **The root commit is the one documented exception.** A repository cannot have a root commit on a branch that does not exist, so the initial push of `main` happens once, at `git init`. It is recorded in the commit body and in `14-build-plan/progress-log.md`. Nothing is ever pushed to `main` again.
 - `--force` is used only on your own `task/<slug>` branch, only with `--force-with-lease`, and only when nobody else has pushed to it. Never on `main`, a release branch, or a tag.
 - `--no-verify` is a hard block everywhere. If a hook is wrong, the hook is fixed in its own commit.
 - A rejected push is fixed forward. History is append-only; that is the point.

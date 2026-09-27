@@ -115,7 +115,7 @@ What that requires of you now, while the code does not exist yet:
 | Testing | kotlin-test, Turbine, MockK, Robolectric, Compose UI test, Paparazzi |
 | Modules | `shared/{core,domain,data,runtime,orchestration,skills,vcs,ui}`, `androidApp`, `iosApp` (stub) |
 
-The repository slug is written `<org>/claude-code-android` throughout these docs because the GitHub organisation does not exist yet. **Replace `<org>` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push**, and search for it again before the first release.
+The repository slug is written `mertgoevse-wq/claude-code-android` throughout these docs because the GitHub organisation does not exist yet. **Replace `mertgoevse-wq` in `README.md` and `THIRD_PARTY_NOTICES.md` before the first push**, and search for it again before the first release.
 
 ## Code rules
 
@@ -133,7 +133,7 @@ The repository slug is written `<org>/claude-code-android` throughout these docs
 1. **Never delete** anything. No file deletion, no branch or tag deletion, no repository deletion, no `push --delete`, no force-push to a shared branch, no `--no-verify`. Moving something to a quarantine directory is not deleting it.
 2. **Never spend money.** No paid API, no subscription, no purchase, no paid tier.
 3. **Never make anything public.** Private repositories only.
-4. **Never push to the default branch.** Every push goes to `task/<slug>`.
+4. **Never push to the default branch.** Every push goes to `task/<slug>`. The repository's root commit is the one documented exception, recorded in `13-process/git-strategy.md` §6.
 5. **Never hide anything.** Every command, diff, decision, error, and cost is recorded and visible.
 
 These are enforced in `HardBlockPolicy`, in tests, and at the agent permission layer. There is no setting, flag, or autonomy level that turns one off. If you are reasoning about whether a block applies, it applies.

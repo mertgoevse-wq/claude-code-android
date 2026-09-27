@@ -4,7 +4,7 @@
 
 > **Unofficial project.** Independent and not affiliated with, endorsed by, or sponsored by Anthropic. All names and marks belong to their owners. This project ships its own mark and its own assets.
 
-[![Build](https://github.com/<org>/claude-code-android/actions/workflows/ci.yml/badge.svg)](https://github.com/<org>/claude-code-android/actions/workflows/ci.yml) · [![Release](https://img.shields.io/github/v/release/<org>/claude-code-android.svg)](https://github.com/<org>/claude-code-android/releases) · [![Licence](https://img.shields.io/github/license/<org>/claude-code-android.svg)](LICENSE) · [![F-Droid](https://img.shields.io/badge/F--Droid-F-Droid-green.svg)](https://f-droid.org/)
+[![Build](https://github.com/mertgoevse-wq/claude-code-android/actions/workflows/ci.yml/badge.svg)](https://github.com/mertgoevse-wq/claude-code-android/actions/workflows/ci.yml) · [![Release](https://img.shields.io/github/v/release/mertgoevse-wq/claude-code-android.svg)](https://github.com/mertgoevse-wq/claude-code-android/releases) · [![Licence](https://img.shields.io/github/license/mertgoevse-wq/claude-code-android.svg)](LICENSE) · [![F-Droid](https://img.shields.io/badge/F--Droid-F-Droid-green.svg)](https://f-droid.org/)
 
 <!-- Replace with a real capture from docs/04-screens/04-chat-detail.md once a build exists.
 <img src="docs/assets/chat-detail-light.png" alt="A chat with Claude Code running: a plan at the top, a tool card mid-run, the terminal below, and a cost meter in the header" width="720"> -->
@@ -30,14 +30,14 @@ A native Android app that runs the real Claude Code engine on your phone. Give i
 
 <a href="https://f-droid.org/packages/dev.claudecode.android/"><img src="https://img.shields.io/f-droid/v/dev.claudecode.android.svg" alt="Get it on F-Droid"></a>
 
-**Direct APK** — from the [releases page](https://github.com/<org>/claude-code-android/releases). The SHA-256 is published next to every file, and the app verifies it before installing an update. Play Protect will warn you about sideloading; that is expected, and it is the same warning any APK install produces.
+**Direct APK** — from the [releases page](https://github.com/mertgoevse-wq/claude-code-android/releases). The SHA-256 is published next to every file, and the app verifies it before installing an update. Play Protect will warn you about sideloading; that is expected, and it is the same warning any APK install produces.
 
 Requires Android 8 or newer on an `arm64` device. The first run installs a Linux runtime — that is a few hundred megabytes and a few minutes, and it is resumable if you interrupt it.
 
 **From a clone:**
 
 ```bash
-git clone https://github.com/<org>/claude-code-android.git
+git clone https://github.com/mertgoevse-wq/claude-code-android.git
 cd claude-code-android
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
