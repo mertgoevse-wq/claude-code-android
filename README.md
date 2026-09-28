@@ -1,3 +1,5 @@
+<div align="center">
+
 # Claude Code Android
 
 **Type one sentence. The app picks a project. Claude Code plans, writes, tests, debugs, fixes its own failures, commits, and tells you when it is done. You can put the phone in your pocket in between.**
@@ -5,6 +7,8 @@
 > **Unofficial project.** Independent and not affiliated with, endorsed by, or sponsored by Anthropic. All names and marks belong to their owners. This project ships its own mark and its own assets.
 
 [![Build](https://github.com/mertgoevse-wq/claude-code-android/actions/workflows/ci.yml/badge.svg)](https://github.com/mertgoevse-wq/claude-code-android/actions/workflows/ci.yml) · [![Release](https://img.shields.io/github/v/release/mertgoevse-wq/claude-code-android.svg)](https://github.com/mertgoevse-wq/claude-code-android/releases) · [![Licence](https://img.shields.io/github/license/mertgoevse-wq/claude-code-android.svg)](LICENSE) · [![F-Droid](https://img.shields.io/badge/F--Droid-F-Droid-green.svg)](https://f-droid.org/)
+
+</div>
 
 <!-- Replace with a real capture from docs/04-screens/04-chat-detail.md once a build exists.
 <img src="docs/assets/chat-detail-light.png" alt="A chat with Claude Code running: a plan at the top, a tool card mid-run, the terminal below, and a cost meter in the header" width="720"> -->

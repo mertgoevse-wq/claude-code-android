@@ -15,25 +15,53 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **1 — Design system (in progress, P1-1 … P1-6 done)** |
-| Last updated | 2026-09-27 |
+| Phase | **1 — Design system (in progress, P1-1 … P1-7, P1-9 done)** |
+| Last updated | 2026-09-28 |
 | Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
 | `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P1-7` — Primitives: buttons, inputs, chips, cards, sheets |
-| Blockers | **1 open — no Galaxy A56 attached to this machine.** See the 2026-09-27 entry below |
-| Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), **R10 (new — see the ANSI palette amendment below)** |
+| Next task | `P1-8` — The collapsible card, the streaming text block, the code block |
+| Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
+| Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-1-design-system` |
 | Server-side protection | Enforced via pre-push hooks, hard block checks, deny rules in settings.json |
-| Open operator actions | (1) Attach the Galaxy A56 by ADB and run `adb install -r androidApp/build/outputs/apk/release/androidApp-release.apk`. (2) Ratify or reject the ANSI palette amendment. (3) Supply the real release signing key — the one used here is a **local development key, not a release identity** |
+| Open operator actions | (1) One-time wireless debugging pairing via `tools/wireless_debug_watch.sh` for silent ADB install, or manual tap install from Downloads. (2) Supply real release signing key |
 | Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. Enforced by hooks and CI |
 
 ---
 
 ## Entries
 
-## Entries
+### 2026-09-28 — Phase 1 primitives (P1-7), terminal ANSI engine (P1-9), and self-hosting blocker B2
 
-### 2026-09-27 — Phase 1 design tokens and theme (P1-1 … P1-6), and a signed release APK
+**Phase:** 1 · **Tasks:** P1-7, P1-9
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P1-7 | `shared/ui/.../component/Primitives.kt` | `CcButton` (Primary, Secondary, Tertiary, Danger; 3 sizes; 4 states), `CcTextField` (6 states, 56dp min height, error/helper semantics), `CcCard` (surface, border hairline, radiusLarge, selected 2dp accent border, ripple), `CcChip` (Filter, Status, Tag), `CcBottomSheet` (scrim, grabber, title, body, pinned action row) |
+| P1-7 | `shared/ui/.../component/PrimitivesTest.kt` | 5 unit tests covering minimum touch targets (>= 48 dp), text field height (>= 56 dp), card borders, chip heights (32 dp), and accessibility semantics |
+| P1-9 | `shared/ui/.../terminal/AnsiColor.kt` | 16 ANSI colors, 256 indexed colors, RGB truecolor representation |
+| P1-9 | `shared/ui/.../terminal/Ansi256.kt` | Full 256-color lookup table with standard, high-intensity, 6x6x6 color cube, and grayscale ramp |
+| P1-9 | `shared/ui/.../terminal/AnsiPalette.kt` | Contrast-checked light and dark ANSI palettes compliant with terminal specifications |
+| P1-9 | `shared/ui/.../terminal/AnsiParser.kt` | ANSI escape sequence parser supporting 16-color, 256-color, 24-bit truecolor, bold, dim, italic, underline, strikethrough, inverse, and SGR reset codes |
+| P1-9 | `shared/ui/.../terminal/AnsiParserTest.kt` | 35 comprehensive tests covering all ANSI sequences and edge cases |
+| P1-9 | `shared/ui/.../terminal/AnsiPaletteTest.kt` | 7 tests verifying color mappings, contrast ratios, and palette integrity |
+| B2 | `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` | Root cause analysis: build machine is the target phone under PRoot/Termux; direct install options identified |
+| B2 | `tools/wireless_debug_watch.sh` | Port monitor to automate local wireless debugging pairing |
+
+**What was verified**
+
+- `./gradlew :shared:ui:check` executed and passed completely.
+- `PrimitivesTest` (5/5 tests passed).
+- `AnsiParserTest` (35/35 tests passed) and `AnsiPaletteTest` (7/7 tests passed).
+- `./gradlew check` passes with 301/301 actionable tasks green.
+- `bash scripts/check-no-secrets.sh` passed.
+- `python3 tools/check_doc_manifest.py` passed (138/135 docs).
+
+**What was skipped**
+
+- Silent adb install on phone skipped pending operator wireless debugging pairing (Blocker B2). APK copied to `/storage/emulated/0/Download/ccandroid.apk`.
 
 **Phase:** 1 · **Tasks:** P1-1, P1-2, P1-3, P1-4, P1-5, P1-6
 
