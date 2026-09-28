@@ -15,11 +15,11 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **1 — Design system (in progress, P1-1 … P1-7, P1-9 done)** |
+| Phase | **1 — Design system (in progress, P1-1 … P1-9 done)** |
 | Last updated | 2026-09-28 |
 | Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
 | `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P1-8` — The collapsible card, the streaming text block, the code block |
+| Next task | `P1-10` — Icon set selected and documented |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-1-design-system` |
@@ -30,6 +30,31 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-28 — Phase 1 dynamic content components (P1-8)
+
+**Phase:** 1 · **Tasks:** P1-8
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P1-8 | `shared/ui/.../component/CodeBlock.kt` | Fenced code block in JetBrains Mono with multi-language tokenizer (Kotlin, Shell, Python, JS, JSON), syntax highlighting via `CcSyntaxPalette`, optional line numbering with tabular alignment, accessible copy button with visual confirmation |
+| P1-8 | `shared/ui/.../component/StreamingText.kt` | Streaming markdown renderer supporting headings, bullet/numbered lists, paragraphs, links, and code fences. Live delta streaming with unclosed fence detection and pulsing caret indicator without outer list reflow |
+| P1-8 | `shared/ui/.../component/ToolCard.kt` | Collapsible activity card with 5 states (Pending, Running, Done, Error, Denied), dedicated glyphs, 52-char target truncation, 2 KB output cap with truncation marker, animated running accent line, and subagent indentation |
+| P1-8 | `shared/ui/.../component/CodeBlockTest.kt` | 4 tests covering keyword extraction, string/comment tokens, line number formatting, and language label normalization |
+| P1-8 | `shared/ui/.../component/StreamingTextTest.kt` | 4 tests covering heading/list parsing, closed code blocks, unclosed streaming fences, and inline markdown styling |
+| P1-8 | `shared/ui/.../component/ToolCardTest.kt` | 3 tests covering 5 distinct state glyphs, target path truncation, and 2 KB byte-size output capping |
+
+**What was verified**
+
+- `./gradlew :shared:ui:check` executed and passed cleanly.
+- `CodeBlockTest` (4/4 passed), `StreamingTextTest` (4/4 passed), `ToolCardTest` (3/3 passed).
+- `./gradlew check` passed across entire project (301/301 tasks green).
+
+**What was skipped**
+
+- None. All P1-8 requirements and edge cases implemented and verified against design tokens.
 
 ### 2026-09-28 — Phase 1 primitives (P1-7), terminal ANSI engine (P1-9), and self-hosting blocker B2
 
