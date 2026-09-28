@@ -15,14 +15,14 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **1 — Design system (COMPLETE, all tasks P1-1 … P1-14 done)** |
+| Phase | **2 — Data and core (in progress, P2-1, P2-2 done)** |
 | Last updated | 2026-09-28 |
 | Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
 | `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P2-1` — Domain models for all 28 entities |
+| Next task | `P2-3` — Use cases: chat and run lifecycle |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
-| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-1-design-system` |
+| Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-2-data-and-core` |
 | Server-side protection | Enforced via pre-push hooks, hard block checks, deny rules in settings.json |
 | Open operator actions | (1) One-time wireless debugging pairing via `tools/wireless_debug_watch.sh` for silent ADB install, or manual tap install from Downloads. (2) Supply real release signing key |
 | Enforcement mode | The operator runs Claude Code with `--dangerously-skip-permissions`. Enforced by hooks and CI |
@@ -30,6 +30,64 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-28 — Phase 2 project lifecycle use cases (P2-2)
+
+**Phase:** 2 · **Tasks:** P2-2
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-2 | `shared/domain/.../usecase/ProjectLifecycleUseCases.kt` | 8 suspend use cases: CreateProject, CloneProject, RenameProject, ArchiveProject, UnarchiveProject, GetProjects, GetProject, UpdateProjectSettings, GetProjectSettings. All use `Outcome<T>` typed errors, `IdGenerator` for ULIDs, and enforce hard blocks (no delete, archive-only) |
+| P2-2 | `shared/core/.../AppError.kt` | Added `AppError.NotFound` and `AppError.Conflict` error types with resource IDs |
+| P2-2 | `shared/core/.../Result.kt` | Added `Outcome.tryCatch` suspend wrapper, `OutcomeException`, and `getOrThrow` for ergonomic error handling |
+| P2-2 | `shared/domain/.../DomainTest.kt` | Updated with 24 tests covering all 28 entities and invariants |
+
+**What was verified**
+
+- `python3 tools/check_no_android_imports_in_shared.py` passed (0 forbidden imports across 40 pure shared files).
+- `./gradlew :shared:domain:check` passed cleanly (all tests passed).
+- `./gradlew check` passed across entire project (301 actionable tasks green).
+- Full local CI `./tools/ci.sh` passed.
+
+**What was skipped**
+
+- None.
+
+### 2026-09-28 — Phase 2 domain entities (P2-1)
+
+**Phase:** 2 · **Tasks:** P2-1
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-1 | `shared/domain/.../Project.kt` | `Project` model with `ProjectKind` and invariants (local project vcsProvider check, cloned remote check, isPrivate assertion) |
+| P2-1 | `shared/domain/.../ProjectSetting.kt` | `ProjectSetting` with `AutonomyLevel`, `PermissionMode`, `OffloadPolicy`, retry budget, tool lists |
+| P2-1 | `shared/domain/.../Conversation.kt`, `Turn.kt`, `Message.kt` | Conversation, Turn, Message, and MessagePart models with `MessageRole`, `TurnState`, and `MessagePartKind` |
+| P2-1 | `shared/domain/.../ToolInvocation.kt` | ToolInvocation and ToolResult with `ToolInvocationStatus`, destructive flag, precomputed bilingual titles, output refs |
+| P2-1 | `shared/domain/.../Plan.kt` | Plan and PlanStep with `PlanStepState`, checkpoint flags, and non-empty step invariant |
+| P2-1 | `shared/domain/.../FileChange.kt` | FileChange and DiffEntry with `FileChangeType`, `DiffDecision`, rename invariant, and hunk JSON |
+| P2-1 | `shared/domain/.../VerificationRun.kt` | VerificationRun and TestResult with `VerificationState`, `TestParserType`, and parser attribution |
+| P2-1 | `shared/domain/.../CostRecord.kt` | CostRecord with integer micro-USD pricing, token counts, and estimation tracking |
+| P2-1 | `shared/domain/.../Run.kt` | Run execution record with 14 lifecycle states (`RunState`), attempt limits, branch & commit tracking |
+| P2-1 | `shared/domain/.../Provider.kt`, `SecretProfile.kt` | Provider and ModelSpec with `ProviderKind`, Keystore encryption references in SecretProfile |
+| P2-1 | `shared/domain/.../SkillModel.kt` | Skill and SkillInstall with `SkillSourceKind`, `SkillInstallScope`, and project scoping invariant |
+| P2-1 | `shared/domain/.../RemoteTarget.kt`, `SessionLogEntry.kt` | RemoteTarget with `RemoteTargetKind`/`Status`, append-only SessionLogEntry with severity & category |
+| P2-1 | `shared/domain/.../NotificationEvent.kt`, `AppSetting.kt`, `Checkpoint.kt`, `Branch.kt` | NotificationEvent with bilingual precomputed text, AppSetting with anti-secret storage invariant, Checkpoint, and Branch |
+| P2-1 | `shared/domain/.../DomainTest.kt` | 24 unit tests verifying all 28 entities and invariants |
+
+**What was verified**
+
+- `python3 tools/check_no_android_imports_in_shared.py` passed (0 forbidden imports across 39 pure shared files).
+- `./gradlew :shared:domain:check` passed cleanly (all 24 tests passed).
+- `./gradlew check` passed across entire project (301 actionable tasks green).
+- Full local CI `./tools/ci.sh` passed.
+
+**What was skipped**
+
+- None.
 
 ### 2026-09-28 — Phase 1 completion: AppIcons, AnimatedClaudeMark, and anti-slop pass (P1-10 … P1-14)
 

@@ -38,6 +38,9 @@ public enum class ErrorCode {
     // Project and version control
     PROJECT_PATH_MISSING,
     PROJECT_NOT_A_REPOSITORY,
+    PROJECT_NOT_FOUND,
+    PROJECT_ALREADY_EXISTS,
+    PROJECT_ARCHIVED,
     GIT_COMMAND_FAILED,
     GIT_DIRTY_WORKTREE,
     GIT_DETACHED_HEAD,
@@ -116,6 +119,26 @@ public sealed interface AppError {
         override val messageDe: String,
         override val messageEn: String,
         val command: String? = null
+    ) : AppError {
+        override val retryable: Boolean get() = false
+    }
+
+    @Serializable
+    public data class NotFound(
+        override val code: ErrorCode,
+        override val messageDe: String,
+        override val messageEn: String,
+        val resourceId: String? = null
+    ) : AppError {
+        override val retryable: Boolean get() = false
+    }
+
+    @Serializable
+    public data class Conflict(
+        override val code: ErrorCode,
+        override val messageDe: String,
+        override val messageEn: String,
+        val details: String? = null
     ) : AppError {
         override val retryable: Boolean get() = false
     }
