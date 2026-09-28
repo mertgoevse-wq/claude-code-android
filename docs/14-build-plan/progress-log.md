@@ -15,11 +15,11 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **1 — Design system (in progress, P1-1 … P1-9 done)** |
+| Phase | **1 — Design system (COMPLETE, all tasks P1-1 … P1-14 done)** |
 | Last updated | 2026-09-28 |
 | Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
 | `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P1-10` — Icon set selected and documented |
+| Next task | `P2-1` — Domain models for all 28 entities |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-1-design-system` |
@@ -30,6 +30,33 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-28 — Phase 1 completion: AppIcons, AnimatedClaudeMark, and anti-slop pass (P1-10 … P1-14)
+
+**Phase:** 1 · **Tasks:** P1-10, P1-11, P1-12, P1-13, P1-14
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P1-10 | `shared/ui/.../component/AppIcons.kt` | Comprehensive Tabler icon vector suite (outlined 24x24dp, 2dp stroke) spanning navigation, actions, and domain symbols. Hard anti-slop rule enforced: no trash icon anywhere |
+| P1-10 | `shared/ui/.../component/AppIconsTest.kt` | 6 unit tests asserting all navigation/action/domain icons exist, 24x24dp dimensions, valid paths, and zero trash icons |
+| P1-11, P1-12 | `shared/ui/.../component/AnimatedClaudeMark.kt` | Compose Canvas mark built from 4 teardrop lobes rotated around centre. Idle breathing (2800ms sine cycle, 1.00->1.04, 1.02 reduced motion). Working character state machine with 11 states (IDLE, THINKING, READING, WRITING, RUNNING, WAITING, VERIFYING, PAUSED, ERROR, DONE, UNVERIFIED), contrast-safe eye rendering in background token, pupil/gaze clamping, eyelid narrowing, concentration asymmetry on RUNNING (+1px left eye), and `mapEventToMarkState` event mapper |
+| P1-11, P1-12 | `shared/ui/.../component/MarkStateMappingTest.kt` | 7 unit tests verifying tool and run state mappings, visible eyes on working states, running asymmetry, distinct DONE vs UNVERIFIED expressions, and geometric ratio invariants |
+| P1-13 | `docs/03-design/anti-slop-rules.md` review | Full anti-slop checklist audited: no stock Material, no Roboto, no purple, no gradients, no glassmorphism, no emoji, no cards-in-cards nesting, touch targets >= 48dp |
+| P1-14 | `tools/check_token_usage.py` | Automated WCAG 2.1 relative luminance and contrast ratio verifier across all light/dark tokens |
+
+**What was verified**
+
+- `./tools/check_token_usage.py` executed: all theme contrast ratios pass WCAG AA / AAA.
+- `./gradlew :shared:ui:check` executed and passed cleanly.
+- `AppIconsTest` (6/6 passed), `MarkStateMappingTest` (7/7 passed).
+- Full local CI `./tools/ci.sh` passed with 301/301 actionable tasks green.
+- Phase 1 exit criteria completely satisfied.
+
+**What was skipped**
+
+- None.
 
 ### 2026-09-28 — Phase 1 dynamic content components (P1-8)
 
