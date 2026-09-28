@@ -15,11 +15,11 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **2 — Data and core (in progress, P2-1, P2-2 done)** |
+| Phase | **2 — Data and core (in progress, P2-1, P2-2, P2-3, P2-4 done)** |
 | Last updated | 2026-09-28 |
 | Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
 | `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P2-3` — Use cases: chat and run lifecycle |
+| Next task | `P2-5` — Use cases: budget, plans, verification |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-2-data-and-core` |
@@ -30,6 +30,52 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-28 — Phase 2 permission policy and autonomy levels use cases (P2-4)
+
+**Phase:** 2 · **Tasks:** P2-4
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-4 | `shared/domain/.../usecase/PermissionPolicyUseCases.kt` | 11 use cases: GetPermissionMode, GetCliPermissionMode, CheckToolApproval, ComputeEffectiveTools, ValidateProjectSettings, UpdateAutonomyLevel, UpdateDeniedTools, UpdateAllowedTools, CanRunToolWithoutApproval, plus DefaultToolSets and HardBlockTools objects |
+| P2-4 | `shared/domain/.../policy/HardBlockPolicy.kt` | Enhanced with deletion command detection, destructive git regex, push --all/--mirror blocking, proper Hard Block 1 and 4 naming in messages |
+| P2-4 | `shared/domain/.../DomainTest.kt` | 65 comprehensive tests covering: permission mode mapping, tool approval per level, hard block enforcement at all levels, command chain detection, matrix test (every level × tool category × hard block), five rules all levels, delete patterns, delete chains, decision closed set, unknown tool handling, MCP tool policy, fix escalation |
+
+**What was verified**
+
+- `python3 tools/check_no_android_imports_in_shared.py` passed (0 forbidden imports across 41 pure shared files).
+- `./gradlew :shared:domain:check` passed cleanly (all 65 tests passed).
+- `./gradlew check` passed across entire project (301 actionable tasks green).
+- Full local CI `./tools/ci.sh` passed.
+
+**What was skipped**
+
+- None.
+
+### 2026-09-28 — Phase 2 chat and run lifecycle use cases (P2-3)
+
+**Phase:** 2 · **Tasks:** P2-3
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-3 | `shared/domain/.../usecase/ChatAndRunUseCases.kt` | 17 suspend use cases: CreateConversation, GetConversations, UpdateConversation, ArchiveConversation, CreateTurn, UpdateTurn, GetTurns, AddMessage, AddMessagePart, GetMessagesWithParts, CreateRun, UpdateRun, GetRuns, GetRunningRun, CreatePlan, UpdatePlanStep, GetPlan, CreateVerificationRun, UpdateVerificationRun, RecordCost, GetTotalCost |
+| P2-3 | `shared/domain/.../VerificationRun.kt` | Added required `createdAt` field to match data model spec |
+| P2-3 | Repository interfaces | `ConversationRepository`, `TurnRepository`, `MessageRepository`, `RunRepository`, `PlanRepository`, `VerificationRepository`, `CostRepository` defined as pure suspend functions |
+
+**What was verified**
+
+- `python3 tools/check_no_android_imports_in_shared.py` passed (0 forbidden imports across 41 pure shared files).
+- `./gradlew :shared:domain:check` passed cleanly (all tests passed).
+- `./gradlew check` passed across entire project (301 actionable tasks green).
+- Full local CI `./tools/ci.sh` passed.
+
+**What was skipped**
+
+- None.
 
 ### 2026-09-28 — Phase 2 project lifecycle use cases (P2-2)
 
