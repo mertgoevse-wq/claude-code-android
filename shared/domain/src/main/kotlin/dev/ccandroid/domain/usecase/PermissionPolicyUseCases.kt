@@ -19,10 +19,6 @@ import dev.ccandroid.domain.policy.HardBlockPolicy
  * - Validate settings changes don't violate hard blocks
  * - Map autonomy level to CLI permission mode
  */
-public interface ProjectSettingRepository {
-    suspend fun getSetting(projectId: String): Outcome<ProjectSetting?>
-    suspend fun updateSetting(setting: ProjectSetting): Outcome<Unit>
-}
 
 /**
  * Default tool sets per autonomy level.

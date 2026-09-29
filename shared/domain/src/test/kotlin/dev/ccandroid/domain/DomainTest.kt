@@ -2,7 +2,31 @@ package dev.ccandroid.domain
 
 import dev.ccandroid.core.ErrorCode
 import dev.ccandroid.core.Outcome
+import dev.ccandroid.core.OutcomeException
 import dev.ccandroid.domain.policy.HardBlockPolicy
+import dev.ccandroid.core.DefaultIdGenerator
+import dev.ccandroid.domain.usecase.AddPlanStepUseCase
+import dev.ccandroid.domain.usecase.ApprovePlanUseCase
+import dev.ccandroid.domain.usecase.CheckCostAdvisoryThresholdUseCase
+import dev.ccandroid.domain.usecase.CreatePlanUseCase
+import dev.ccandroid.domain.usecase.DetectVerificationCommandsUseCase
+import dev.ccandroid.domain.usecase.GetConversationCostUseCase
+import dev.ccandroid.domain.usecase.GetCostBreakdownUseCase
+import dev.ccandroid.domain.usecase.GetPlanByRunIdUseCase
+import dev.ccandroid.domain.usecase.GetPlanUseCase
+import dev.ccandroid.domain.usecase.GetProjectCostUseCase
+import dev.ccandroid.domain.usecase.GetRetryBudgetUseCase
+import dev.ccandroid.domain.usecase.GetRunCostUseCase
+import dev.ccandroid.domain.usecase.JudgeVerificationRunUseCase
+import dev.ccandroid.domain.usecase.ProposePlanChangeUseCase
+import dev.ccandroid.domain.usecase.RecordCostUseCase
+import dev.ccandroid.domain.usecase.RemovePlanStepUseCase
+import dev.ccandroid.domain.usecase.ReorderPlanStepsUseCase
+import dev.ccandroid.domain.usecase.RunVerificationUseCase
+import dev.ccandroid.domain.usecase.UpdatePlanStepUseCase
+import dev.ccandroid.domain.usecase.UpdateRetryBudgetUseCase
+import dev.ccandroid.domain.usecase.UpdateVerificationRunUseCase
+import dev.ccandroid.domain.usecase.VerificationRunResult
 import dev.ccandroid.domain.usecase.CanRunToolWithoutApprovalUseCase
 import dev.ccandroid.domain.usecase.CheckToolApprovalUseCase
 import dev.ccandroid.domain.usecase.ComputeEffectiveToolsUseCase
@@ -21,6 +45,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 /**
@@ -1198,5 +1223,693 @@ class DomainTest {
         // E2E test: a fix touching more than 30 files escalates at every level
         // This is enforced in the orchestration layer when applying fixes
         assertTrue(true) // Placeholder for E2E test
+    }
+
+    // ==================== Budget Use Cases Tests ====================
+
+    @Test
+    fun `record cost - stores cost record with all fields`() = runBlocking {
+        val mockRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(0L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val idGenerator = DefaultIdGenerator()
+        val useCase = RecordCostUseCase(mockRepo, idGenerator)
+        val result = useCase(
+            runId = "run_01",
+            projectId = "proj_01",
+            conversationId = "conv_01",
+            inputTokens = 1500L,
+            outputTokens = 400L,
+            cacheReadTokens = 100L,
+            cacheCreationTokens = 50L,
+            costUsdMicros = 8500L,
+            isEstimated = true,
+            modelId = "claude-sonnet-4-5",
+            providerId = "prov_anthropic",
+            inputPricePerMtok = 3000L,
+            outputPricePerMtok = 15000L,
+        ).getOrThrow()
+
+        assertEquals("run_01", result.runId)
+        assertEquals("proj_01", result.projectId)
+        assertEquals("conv_01", result.conversationId)
+        assertEquals(1500L, result.inputTokens)
+        assertEquals(400L, result.outputTokens)
+        assertEquals(100L, result.cacheReadTokens)
+        assertEquals(50L, result.cacheCreationTokens)
+        assertEquals(8500L, result.costUsdMicros)
+        assertTrue(result.isEstimated)
+        assertEquals("claude-sonnet-4-5", result.modelId)
+        assertEquals("prov_anthropic", result.providerId)
+        assertEquals(3000L, result.inputPricePerMtok)
+        assertEquals(15000L, result.outputPricePerMtok)
+    }
+
+    @Test
+    fun `get run cost - sums cost records for a run`() = runBlocking {
+        val records = listOf(
+            CostRecord(id = "c1", runId = "run_01", projectId = "p1", conversationId = "c1",
+                inputTokens = 1000L, outputTokens = 200L, cacheReadTokens = 0, cacheCreationTokens = 0,
+                costUsdMicros = 5000L, isEstimated = false, modelId = "m1", providerId = "prov1",
+                inputPricePerMtok = 3000L, outputPricePerMtok = 15000L),
+            CostRecord(id = "c2", runId = "run_01", projectId = "p1", conversationId = "c1",
+                inputTokens = 500L, outputTokens = 100L, cacheReadTokens = 0, cacheCreationTokens = 0,
+                costUsdMicros = 3000L, isEstimated = true, modelId = "m1", providerId = "prov1",
+                inputPricePerMtok = 3000L, outputPricePerMtok = 15000L),
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(records)
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(0L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val useCase = GetRunCostUseCase(mockRepo)
+        val result = useCase("run_01").getOrThrow()
+        assertEquals(8000L, result)
+    }
+
+    @Test
+    fun `get project cost - returns total from repository`() = runBlocking {
+        val mockRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(15000L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val useCase = GetProjectCostUseCase(mockRepo)
+        val result = useCase("proj_01").getOrThrow()
+        assertEquals(15000L, result)
+    }
+
+    @Test
+    fun `get conversation cost - returns total from repository`() = runBlocking {
+        val mockRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(0L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(7500L)
+        }
+
+        val useCase = GetConversationCostUseCase(mockRepo)
+        val result = useCase("conv_01").getOrThrow()
+        assertEquals(7500L, result)
+    }
+
+    @Test
+    fun `check cost advisory threshold - returns true when exceeded`() = runBlocking {
+        val mockCostRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(15000L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val costUseCase = GetProjectCostUseCase(mockCostRepo)
+        val useCase = CheckCostAdvisoryThresholdUseCase(costUseCase)
+
+        val setting = ProjectSetting(
+            projectId = "proj_01",
+            modelProviderId = "prov_anthropic",
+            modelId = "claude-sonnet-4-5",
+            costAdvisoryThresholdUsd = 10000L, // $10 threshold
+        )
+
+        val result = useCase("proj_01", setting).getOrThrow()
+        assertTrue(result)
+    }
+
+    @Test
+    fun `check cost advisory threshold - returns false when not exceeded`() = runBlocking {
+        val mockCostRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(5000L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val costUseCase = GetProjectCostUseCase(mockCostRepo)
+        val useCase = CheckCostAdvisoryThresholdUseCase(costUseCase)
+
+        val setting = ProjectSetting(
+            projectId = "proj_01",
+            modelProviderId = "prov_anthropic",
+            modelId = "claude-sonnet-4-5",
+            costAdvisoryThresholdUsd = 10000L,
+        )
+
+        val result = useCase("proj_01", setting).getOrThrow()
+        assertFalse(result)
+    }
+
+    @Test
+    fun `check cost advisory threshold - returns false when no threshold set`() = runBlocking {
+        val mockCostRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(100000L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val costUseCase = GetProjectCostUseCase(mockCostRepo)
+        val useCase = CheckCostAdvisoryThresholdUseCase(costUseCase)
+
+        val setting = ProjectSetting(
+            projectId = "proj_01",
+            modelProviderId = "prov_anthropic",
+            modelId = "claude-sonnet-4-5",
+            costAdvisoryThresholdUsd = null,
+        )
+
+        val result = useCase("proj_01", setting).getOrThrow()
+        assertFalse(result)
+    }
+
+    // ==================== Plan Use Cases Tests ====================
+
+    @Test
+    fun `create plan - succeeds with valid steps`() {
+        val idGenerator = DefaultIdGenerator()
+        val useCase = CreatePlanUseCase(idGenerator)
+        val steps = listOf(
+            PlanStep(id = "s1", planId = "p1", ordinal = 0, titleDe = "Schritt 1", titleEn = "Step 1",
+                acceptanceCriteria = "AC1", state = PlanStepState.PENDING, isCheckpoint = false),
+            PlanStep(id = "s2", planId = "p1", ordinal = 1, titleDe = "Schritt 2", titleEn = "Step 2",
+                acceptanceCriteria = "AC2", state = PlanStepState.PENDING, isCheckpoint = true),
+        )
+
+        val result = useCase("run_01", steps).getOrThrow()
+        assertEquals("run_01", result.runId)
+        assertEquals(2, result.steps.size)
+        assertEquals(steps, result.steps)
+    }
+
+    @Test
+    fun `create plan - fails with empty steps`() {
+        val idGenerator = DefaultIdGenerator()
+        val useCase = CreatePlanUseCase(idGenerator)
+        val result = useCase("run_01", emptyList())
+        assertFalse(result.isSuccess)
+        assertEquals(ErrorCode.VERIFY_NO_COMMANDS, result.errorOrNull()?.code)
+    }
+
+    @Test
+    fun `update plan step - updates state and timestamps`() = runBlocking {
+        val plan = Plan(
+            id = "plan_01",
+            runId = "run_01",
+            steps = listOf(
+                PlanStep(id = "s1", planId = "plan_01", ordinal = 0, titleDe = "S1", titleEn = "S1",
+                    acceptanceCriteria = "AC", state = PlanStepState.PENDING, isCheckpoint = false),
+            ),
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.PlanRepository {
+            var storedPlan: Plan? = plan
+            override suspend fun insert(p: Plan): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun getByRunId(runId: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun update(p: Plan): Outcome<Unit> {
+                storedPlan = p
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = UpdatePlanStepUseCase(mockRepo)
+        val result = useCase("plan_01", "s1", PlanStepState.DONE, endedAt = 2000L).getOrThrow()
+
+        assertEquals(PlanStepState.DONE, result.steps.first().state)
+        assertEquals(2000L, result.steps.first().endedAt)
+    }
+
+    @Test
+    fun `add plan step - inserts at position and reindexes`() = runBlocking {
+        val plan = Plan(
+            id = "plan_01",
+            runId = "run_01",
+            steps = listOf(
+                PlanStep(id = "s1", planId = "plan_01", ordinal = 0, titleDe = "S1", titleEn = "S1",
+                    acceptanceCriteria = "AC", state = PlanStepState.PENDING, isCheckpoint = false),
+            ),
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.PlanRepository {
+            var storedPlan: Plan? = plan
+            override suspend fun insert(p: Plan): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun getByRunId(runId: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun update(p: Plan): Outcome<Unit> {
+                storedPlan = p
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = AddPlanStepUseCase(mockRepo)
+        val newStep = PlanStep(id = "s2", planId = "plan_01", ordinal = 1, titleDe = "S2", titleEn = "S2",
+            acceptanceCriteria = "AC2", state = PlanStepState.PENDING, isCheckpoint = true)
+
+        val result = useCase("plan_01", newStep, 1).getOrThrow()
+
+        assertEquals(2, result.steps.size)
+        assertEquals("s2", result.steps[1].id)
+        assertEquals(1, result.steps[1].ordinal)
+    }
+
+    @Test
+    fun `remove plan step - only removes pending steps`() = runBlocking {
+        val plan = Plan(
+            id = "plan_01",
+            runId = "run_01",
+            steps = listOf(
+                PlanStep(id = "s1", planId = "plan_01", ordinal = 0, titleDe = "S1", titleEn = "S1",
+                    acceptanceCriteria = "AC", state = PlanStepState.DONE, isCheckpoint = false),
+                PlanStep(id = "s2", planId = "plan_01", ordinal = 1, titleDe = "S2", titleEn = "S2",
+                    acceptanceCriteria = "AC2", state = PlanStepState.PENDING, isCheckpoint = false),
+            ),
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.PlanRepository {
+            var storedPlan: Plan? = plan
+            override suspend fun insert(p: Plan): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun getByRunId(runId: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun update(p: Plan): Outcome<Unit> {
+                storedPlan = p
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = RemovePlanStepUseCase(mockRepo)
+
+        // Try to remove completed step - should fail
+        try {
+            useCase("plan_01", "s1").getOrThrow()
+            fail("Expected exception for removing completed step")
+        } catch (e: OutcomeException) {
+            assertEquals(ErrorCode.VERIFY_FAILED, e.error.code)
+        }
+
+        // Remove pending step - should succeed
+        val successResult = useCase("plan_01", "s2").getOrThrow()
+        assertEquals(1, successResult.steps.size)
+        assertEquals("s1", successResult.steps.first().id)
+    }
+
+    @Test
+    fun `reorder plan steps - reindexes correctly`() = runBlocking {
+        val plan = Plan(
+            id = "plan_01",
+            runId = "run_01",
+            steps = listOf(
+                PlanStep(id = "s1", planId = "plan_01", ordinal = 0, titleDe = "S1", titleEn = "S1",
+                    acceptanceCriteria = "AC", state = PlanStepState.PENDING, isCheckpoint = false),
+                PlanStep(id = "s2", planId = "plan_01", ordinal = 1, titleDe = "S2", titleEn = "S2",
+                    acceptanceCriteria = "AC2", state = PlanStepState.PENDING, isCheckpoint = true),
+                PlanStep(id = "s3", planId = "plan_01", ordinal = 2, titleDe = "S3", titleEn = "S3",
+                    acceptanceCriteria = "AC3", state = PlanStepState.PENDING, isCheckpoint = false),
+            ),
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.PlanRepository {
+            var storedPlan: Plan? = plan
+            override suspend fun insert(p: Plan): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun getByRunId(runId: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun update(p: Plan): Outcome<Unit> {
+                storedPlan = p
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = ReorderPlanStepsUseCase(mockRepo)
+        val result = useCase("plan_01", listOf("s3", "s1", "s2")).getOrThrow()
+
+        assertEquals("s3", result.steps[0].id)
+        assertEquals(0, result.steps[0].ordinal)
+        assertEquals("s1", result.steps[1].id)
+        assertEquals(1, result.steps[1].ordinal)
+        assertEquals("s2", result.steps[2].id)
+        assertEquals(2, result.steps[2].ordinal)
+    }
+
+    @Test
+    fun `approve plan - marks first pending step as active`() = runBlocking {
+        val plan = Plan(
+            id = "plan_01",
+            runId = "run_01",
+            steps = listOf(
+                PlanStep(id = "s1", planId = "plan_01", ordinal = 0, titleDe = "S1", titleEn = "S1",
+                    acceptanceCriteria = "AC", state = PlanStepState.PENDING, isCheckpoint = false),
+                PlanStep(id = "s2", planId = "plan_01", ordinal = 1, titleDe = "S2", titleEn = "S2",
+                    acceptanceCriteria = "AC2", state = PlanStepState.PENDING, isCheckpoint = true),
+            ),
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.PlanRepository {
+            var storedPlan: Plan? = plan
+            override suspend fun insert(p: Plan): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun getByRunId(runId: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun update(p: Plan): Outcome<Unit> {
+                storedPlan = p
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = ApprovePlanUseCase(mockRepo)
+        val result = useCase("plan_01").getOrThrow()
+
+        assertEquals(PlanStepState.ACTIVE, result.steps[0].state)
+        assertNotNull(result.steps[0].startedAt)
+        assertEquals(PlanStepState.PENDING, result.steps[1].state)
+    }
+
+    @Test
+    fun `propose plan change - adds step with proposed label`() = runBlocking {
+        val plan = Plan(
+            id = "plan_01",
+            runId = "run_01",
+            steps = listOf(
+                PlanStep(id = "s1", planId = "plan_01", ordinal = 0, titleDe = "S1", titleEn = "S1",
+                    acceptanceCriteria = "AC", state = PlanStepState.PENDING, isCheckpoint = false),
+            ),
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.PlanRepository {
+            var storedPlan: Plan? = plan
+            override suspend fun insert(p: Plan): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun getByRunId(runId: String): Outcome<Plan?> = Outcome.Success(storedPlan)
+            override suspend fun update(p: Plan): Outcome<Unit> {
+                storedPlan = p
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = ProposePlanChangeUseCase(mockRepo)
+        val newStep = PlanStep(id = "s2", planId = "plan_01", ordinal = 1, titleDe = "Neu", titleEn = "New",
+            acceptanceCriteria = "AC2", state = PlanStepState.PENDING, isCheckpoint = false)
+
+        val result = useCase("plan_01", newStep, 1, "user requested").getOrThrow()
+
+        assertEquals(2, result.steps.size)
+        assertTrue(result.steps[1].titleDe.contains("vorgeschlagen"))
+        assertTrue(result.steps[1].titleEn.contains("proposed"))
+        assertEquals(1, result.steps[1].ordinal)
+    }
+
+    // ==================== Verification Use Cases Tests ====================
+
+    @Test
+    fun `detect verification commands - gradle project`() {
+        val useCase = DetectVerificationCommandsUseCase()
+        val tempDir = java.io.File.createTempFile("test", "").parentFile
+        java.io.File(tempDir, "build.gradle.kts").createNewFile()
+
+        try {
+            val result = useCase(tempDir.absolutePath).getOrThrow()
+            assertTrue(result.contains("./gradlew assembleDebug"))
+            assertTrue(result.contains("./gradlew test"))
+            assertTrue(result.contains("./gradlew lint"))
+        } finally {
+            java.io.File(tempDir, "build.gradle.kts").delete()
+        }
+    }
+
+    @Test
+    fun `detect verification commands - npm project with test script`() {
+        val useCase = DetectVerificationCommandsUseCase()
+        val tempDir = java.io.File.createTempFile("test", "").parentFile
+        val packageJson = java.io.File(tempDir, "package.json")
+        packageJson.writeText("{\"scripts\": {\"test\": \"jest\", \"build\": \"tsc\"}}")
+
+        try {
+            val result = useCase(tempDir.absolutePath).getOrThrow()
+            assertTrue(result.contains("npm test"))
+            assertTrue(result.contains("npm run build"))
+        } finally {
+            packageJson.delete()
+        }
+    }
+
+    @Test
+    fun `detect verification commands - cargo project`() {
+        val useCase = DetectVerificationCommandsUseCase()
+        val tempDir = java.io.File.createTempFile("test", "").parentFile
+        java.io.File(tempDir, "Cargo.toml").createNewFile()
+
+        try {
+            val result = useCase(tempDir.absolutePath).getOrThrow()
+            assertTrue(result.contains("cargo build"))
+            assertTrue(result.contains("cargo test"))
+            assertTrue(result.contains("cargo clippy"))
+        } finally {
+            java.io.File(tempDir, "Cargo.toml").delete()
+        }
+    }
+
+    @Test
+    fun `detect verification commands - go project`() {
+        val useCase = DetectVerificationCommandsUseCase()
+        val tempDir = java.io.File.createTempFile("test", "").parentFile
+        java.io.File(tempDir, "go.mod").createNewFile()
+
+        try {
+            val result = useCase(tempDir.absolutePath).getOrThrow()
+            assertTrue(result.contains("go build ./..."))
+            assertTrue(result.contains("go test ./..."))
+        } finally {
+            java.io.File(tempDir, "go.mod").delete()
+        }
+    }
+
+    @Test
+    fun `detect verification commands - empty project returns empty list`() {
+        val useCase = DetectVerificationCommandsUseCase()
+        val tempDir = java.io.File.createTempFile("test", "").parentFile
+
+        try {
+            val result = useCase(tempDir.absolutePath).getOrThrow()
+            assertTrue(result.isEmpty())
+        } finally {
+            tempDir.delete()
+        }
+    }
+
+    @Test
+    fun `run verification - creates verification run with running state`() = runBlocking {
+        val mockRepo = object : dev.ccandroid.domain.usecase.VerificationRepository {
+            override suspend fun insert(run: VerificationRun): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<VerificationRun?> = Outcome.Success(null)
+            override suspend fun getByRunId(runId: String): Outcome<List<VerificationRun>> = Outcome.Success(emptyList())
+            override suspend fun update(run: VerificationRun): Outcome<Unit> = Outcome.Success(Unit)
+        }
+
+        val idGenerator = DefaultIdGenerator()
+        val useCase = RunVerificationUseCase(mockRepo, idGenerator)
+        val commands = listOf("./gradlew test", "./gradlew lint")
+        val result = useCase("run_01", 1, commands).getOrThrow()
+
+        assertEquals("run_01", result.runId)
+        assertEquals(1, result.attempt)
+        assertEquals(VerificationState.RUNNING, result.state)
+        assertEquals(2, result.commandCount)
+    }
+
+    @Test
+    fun `update verification run - updates state and duration`() = runBlocking {
+        val run = VerificationRun(
+            id = "vrun_01",
+            runId = "run_01",
+            attempt = 1,
+            state = VerificationState.RUNNING,
+            commandCount = 2,
+            durationMs = 0,
+            createdAt = 1000L,
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.VerificationRepository {
+            var storedRun: VerificationRun? = run
+            override suspend fun insert(r: VerificationRun): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getById(id: String): Outcome<VerificationRun?> = Outcome.Success(storedRun)
+            override suspend fun getByRunId(runId: String): Outcome<List<VerificationRun>> = Outcome.Success(listOf(storedRun!!))
+            override suspend fun update(r: VerificationRun): Outcome<Unit> {
+                storedRun = r
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = UpdateVerificationRunUseCase(mockRepo)
+        val result = useCase("vrun_01", VerificationState.PASSED, 15000L, "log/path").getOrThrow()
+
+        assertEquals(VerificationState.PASSED, result.state)
+        assertEquals(15000L, result.durationMs)
+        assertEquals("log/path", result.logRef)
+    }
+
+    @Test
+    fun `judge verification run - all passed returns PASSED`() {
+        val useCase = JudgeVerificationRunUseCase()
+        val run = VerificationRun(
+            id = "vrun_01", runId = "run_01", attempt = 1,
+            state = VerificationState.RUNNING, commandCount = 2, durationMs = 0, createdAt = 1000L,
+        )
+        val results = listOf(
+            VerificationRunResult("./gradlew test", 0, 10000L, "All tests passed", emptyList(), dev.ccandroid.domain.TestParserType.GRADLE),
+            VerificationRunResult("./gradlew lint", 0, 5000L, "No issues", emptyList(), dev.ccandroid.domain.TestParserType.GRADLE),
+        )
+
+        val result = useCase(run, results).getOrThrow()
+        assertEquals(VerificationState.PASSED, result)
+    }
+
+    @Test
+    fun `judge verification run - any failure returns FAILED`() {
+        val useCase = JudgeVerificationRunUseCase()
+        val run = VerificationRun(
+            id = "vrun_01", runId = "run_01", attempt = 1,
+            state = VerificationState.RUNNING, commandCount = 2, durationMs = 0, createdAt = 1000L,
+        )
+        val results = listOf(
+            VerificationRunResult("./gradlew test", 1, 10000L, "1 test failed", listOf("TestA"), dev.ccandroid.domain.TestParserType.GRADLE),
+            VerificationRunResult("./gradlew lint", 0, 5000L, "No issues", emptyList(), dev.ccandroid.domain.TestParserType.GRADLE),
+        )
+
+        val result = useCase(run, results).getOrThrow()
+        assertEquals(VerificationState.FAILED, result)
+    }
+
+    @Test
+    fun `judge verification run - error exit code returns ERROR`() {
+        val useCase = JudgeVerificationRunUseCase()
+        val run = VerificationRun(
+            id = "vrun_01", runId = "run_01", attempt = 1,
+            state = VerificationState.RUNNING, commandCount = 1, durationMs = 0, createdAt = 1000L,
+        )
+        val results = listOf(
+            VerificationRunResult("./gradlew test", 2, 10000L, "Command not found", emptyList(), dev.ccandroid.domain.TestParserType.GRADLE),
+        )
+
+        val result = useCase(run, results).getOrThrow()
+        assertEquals(VerificationState.ERROR, result)
+    }
+
+    @Test
+    fun `judge verification run - no commands returns UNVERIFIED`() {
+        val useCase = JudgeVerificationRunUseCase()
+        val run = VerificationRun(
+            id = "vrun_01", runId = "run_01", attempt = 1,
+            state = VerificationState.RUNNING, commandCount = 0, durationMs = 0, createdAt = 1000L,
+        )
+        val results = emptyList<VerificationRunResult>()
+
+        val result = useCase(run, results).getOrThrow()
+        assertEquals(VerificationState.UNVERIFIED, result)
+    }
+
+    // ==================== Retry Budget Tests ====================
+
+    @Test
+    fun `get retry budget - returns budget from settings`() = runBlocking {
+        val mockRepo = object : dev.ccandroid.domain.usecase.ProjectSettingRepository {
+            override suspend fun getSetting(projectId: String): Outcome<ProjectSetting?> = Outcome.Success(
+                ProjectSetting(projectId = "p1", modelProviderId = "prov", modelId = "m", retryBudget = 10)
+            )
+            override suspend fun updateSetting(setting: ProjectSetting): Outcome<Unit> = Outcome.Success(Unit)
+        }
+
+        val useCase = GetRetryBudgetUseCase(mockRepo)
+        val result = useCase("p1").getOrThrow()
+        assertEquals(10, result)
+    }
+
+    @Test
+    fun `update retry budget - validates allowed values`() = runBlocking {
+        val mockRepo = object : dev.ccandroid.domain.usecase.ProjectSettingRepository {
+            var storedSetting: ProjectSetting? = ProjectSetting(
+                projectId = "p1",
+                modelProviderId = "prov",
+                modelId = "m",
+                retryBudget = 3,
+            )
+            override suspend fun getSetting(projectId: String): Outcome<ProjectSetting?> = Outcome.Success(storedSetting)
+            override suspend fun updateSetting(setting: ProjectSetting): Outcome<Unit> {
+                storedSetting = setting
+                return Outcome.Success(Unit)
+            }
+        }
+
+        val useCase = UpdateRetryBudgetUseCase(mockRepo)
+
+        // Valid values
+        assertTrue(useCase("p1", 3).isSuccess)
+        assertTrue(useCase("p1", 10).isSuccess)
+        assertTrue(useCase("p1", 50).isSuccess)
+        assertTrue(useCase("p1", -1).isSuccess) // unlimited
+
+        // Invalid value
+        try {
+            useCase("p1", 5).getOrThrow()
+            fail("Expected exception for invalid budget")
+        } catch (e: OutcomeException) {
+            assertEquals(ErrorCode.VERIFY_FAILED, e.error.code)
+        }
+    }
+
+    // ==================== Cost Breakdown Tests ====================
+
+    @Test
+    fun `get cost breakdown - separates estimated and actual`() = runBlocking {
+        val records = listOf(
+            CostRecord(id = "c1", runId = "run_01", projectId = "p1", conversationId = "c1",
+                inputTokens = 1000L, outputTokens = 200L, cacheReadTokens = 0, cacheCreationTokens = 0,
+                costUsdMicros = 5000L, isEstimated = false, modelId = "m1", providerId = "prov1",
+                inputPricePerMtok = 3000L, outputPricePerMtok = 15000L),
+            CostRecord(id = "c2", runId = "run_01", projectId = "p1", conversationId = "c1",
+                inputTokens = 500L, outputTokens = 100L, cacheReadTokens = 0, cacheCreationTokens = 0,
+                costUsdMicros = 3000L, isEstimated = true, modelId = "m1", providerId = "prov1",
+                inputPricePerMtok = 3000L, outputPricePerMtok = 15000L),
+            CostRecord(id = "c3", runId = "run_01", projectId = "p1", conversationId = "c1",
+                inputTokens = 1000L, outputTokens = 200L, cacheReadTokens = 0, cacheCreationTokens = 0,
+                costUsdMicros = 2000L, isEstimated = false, modelId = "m2", providerId = "prov2",
+                inputPricePerMtok = 3000L, outputPricePerMtok = 15000L),
+        )
+
+        val mockRepo = object : dev.ccandroid.domain.usecase.CostRepository {
+            override suspend fun insert(record: CostRecord): Outcome<Unit> = Outcome.Success(Unit)
+            override suspend fun getByRunId(runId: String): Outcome<List<CostRecord>> = Outcome.Success(records)
+            override suspend fun getByProjectId(projectId: String): Outcome<List<CostRecord>> = Outcome.Success(emptyList())
+            override suspend fun getTotalCost(projectId: String): Outcome<Long> = Outcome.Success(0L)
+            override suspend fun getTotalCostByConversation(conversationId: String): Outcome<Long> = Outcome.Success(0L)
+        }
+
+        val useCase = GetCostBreakdownUseCase(mockRepo)
+        val result = useCase("run_01").getOrThrow()
+
+        assertEquals(3000L, result.estimatedUsdMicros)
+        assertEquals(7000L, result.actualUsdMicros)
+        assertEquals(10000L, result.totalUsdMicros)
+        assertEquals(mapOf("m1" to 8000L, "m2" to 2000L), result.byModel)
+        assertEquals(mapOf("prov1" to 8000L, "prov2" to 2000L), result.byProvider)
+        assertEquals(3, result.recordCount)
     }
 }
