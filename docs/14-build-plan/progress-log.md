@@ -15,11 +15,11 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **2 — Data and core (in progress, P2-1, P2-2, P2-3, P2-4 done)** |
-| Last updated | 2026-09-28 |
+| Phase | **2 — Data and core (in progress, P2-1, P2-2, P2-3, P2-4, P2-5 done)** |
+| Last updated | 2026-09-29 |
 | Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
 | `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P2-5` — Use cases: budget, plans, verification |
+| Next task | `P2-6` — Room schema and DAOs |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-2-data-and-core` |
@@ -30,6 +30,29 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-29 — Phase 2 use cases: budget, plans, verification (P2-5)
+
+**Phase:** 2 · **Tasks:** P2-5
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-5 | `shared/domain/.../usecase/BudgetPlanVerificationUseCases.kt` | 20 use cases covering cost recording/queries, plan lifecycle, verification commands/judging, retry budget |
+| P2-5 | `shared/domain/.../usecase/PermissionPolicyUseCases.kt` | Removed duplicate `ProjectSettingRepository` declaration |
+| P2-5 | `shared/domain/.../DomainTest.kt` | Extended with 20 new tests for P2-5 use cases (total 94 tests) |
+
+**What was verified**
+
+- `python3 tools/check_no_android_imports_in_shared.py` passed (0 forbidden imports across 43 pure shared files).
+- `./gradlew :shared:domain:check` passed cleanly (all 94 tests passed).
+- `./gradlew check` passed across entire project (301 actionable tasks green).
+- Full local CI `./tools/ci.sh` passed.
+
+**What was skipped**
+
+- None.
 
 ### 2026-09-28 — Phase 2 permission policy and autonomy levels use cases (P2-4)
 
