@@ -31,6 +31,45 @@ Rules:
 
 ## Entries
 
+### 2026-09-29 — Phase 2 room schema and DAOs (P2-6)
+
+**Phase:** 2 · **Tasks:** P2-6
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-6 | `shared/data/.../entity/` | 27 Room entities across 25 tables (composite keys for branch and checkpoint), indices and foreign keys per `02-architecture/data-model.md` |
+| P2-6 | `shared/data/.../dao/` | 20 DAOs. The session-log DAO is append-only (no update, no delete). `@Transaction` use-case methods for tool completion, plan with steps, and verification with results |
+| P2-6 | `shared/data/.../converter/TypeConverters.kt` | Enum converters for every domain enum plus JSON list/map converters |
+| P2-6 | `shared/data/.../db/AppDatabase.kt` | 27 entities, version 1, `exportSchema = true` |
+| P2-6 | `shared/data/schemas/dev.ccandroid.data.db.AppDatabase/1.json` | Exported schema v1, committed — the baseline P2-7's migration tests validate against |
+| P2-6 | `shared/data/src/test/.../dao/DaoTest.kt` | 31 DAO tests against an in-memory database |
+
+**What was verified**
+
+- `./gradlew :shared:data:testReleaseUnitTest`: 31/31 tests passed on `BundledSQLiteDriver` — a real SQLite engine with `linux_arm64` natives, not a fake.
+- `./gradlew check` green across the whole project (314 actionable tasks).
+- `tools/check_no_android_imports_in_shared.py`: 0 forbidden imports across 43 pure-module files.
+- `scripts/check-no-secrets.sh` green; `tools/check_doc_manifest.py` green (138 docs).
+
+**Decisions**
+
+| Decision | Why | Where recorded |
+|---|---|---|
+| DAO tests run as JVM tests on Room's KMP path (`BundledSQLiteDriver`), not Robolectric | Robolectric's native runtime ships no `linux/aarch64` build — verified against `nativeruntime-dist-compat` up to 1.0.19 — and this repo's build host is ARM64. The Conscrypt and legacy-graphics fallbacks were tried first; both fail because Robolectric's `SQLiteDatabase` is implemented on the native runtime itself. The JVM setup is also what the Room documentation recommends for local database tests, and it serves the KMP portability decision | This entry; `10-build/dependency-versions.md` |
+| Room 2.6.1 → 2.7.1; `androidx.sqlite:sqlite` 2.4.0 → 2.7.1; `sqlite-bundled-jvm` 2.7.1 added (test only) | 2.7.x is the KMP line with real JVM artifacts and a pluggable `SQLiteDriver`, which the JVM test path needs. Versions looked up 2026-09-29 on Google Maven | `10-build/dependency-versions.md` |
+| Test dependencies pin explicit `-jvm` coordinates | Room/SQLite 2.7.x root artifacts are metadata stubs and the Android variant's native loader only knows `System.loadLibrary`; the `-jvm` variants carry the JVM actuals | Comment in `shared/data/build.gradle.kts` |
+| `exportSchema = true` | `10-build/convention-plugins.md` requires a committed schema directory, and P2-7's migration tests need the exported schemas | `AppDatabase.kt` |
+
+**Risk register changes**
+
+None. The Robolectric constraint is recorded in `10-build/dependency-versions.md` rather than as a new risk entry: it is now a documented property of the toolchain, not an open uncertainty.
+
+**What was skipped**
+
+- None for P2-6. P2-7 (migrations with tests) is next.
+
 ### 2026-09-29 — Phase 2 use cases: budget, plans, verification (P2-5)
 
 **Phase:** 2 · **Tasks:** P2-5
