@@ -9,6 +9,11 @@ import dev.ccandroid.data.entity.RunEntity
 import dev.ccandroid.domain.RunState
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * The terminal-state list in [observeActiveRuns] is hand-written SQL and must
+ * match `RunState.isTerminal` in the domain. That is the price of a constant
+ * query string; the domain owns the answer, this query repeats it.
+ */
 @Dao
 interface RunDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)

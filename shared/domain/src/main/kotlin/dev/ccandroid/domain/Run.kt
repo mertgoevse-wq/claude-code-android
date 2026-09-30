@@ -20,6 +20,24 @@ public enum class RunState {
     OFFLOADED,
 }
 
+/**
+ * True once the run has ended and will not move again.
+ *
+ * Declared here so the one place that decides it is the domain, not a SQL
+ * string copied into each query that needs it. `RunDao.observeActiveRuns` is the
+ * only other copy and it must agree.
+ */
+public val RunState.isTerminal: Boolean
+    get() = this in RunStateTerminal
+
+private val RunStateTerminal: Set<RunState> = setOf(
+    RunState.DONE,
+    RunState.FAILED,
+    RunState.CANCELLED,
+    RunState.INTERRUPTED,
+    RunState.OFFLOADED,
+)
+
 @Serializable
 public data class Run(
     val id: String,
