@@ -15,11 +15,11 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **2 — Data and core (in progress, P2-1, P2-2, P2-3, P2-4, P2-5 done)** |
+| Phase | **2 — Data and core (in progress, P2-1 … P2-6 and P2-10 done)** |
 | Last updated | 2026-09-29 |
-| Build status | **Green.** `./gradlew check` and `./tools/ci.sh` both pass; a signed release APK builds and its signature verifies |
-| `./gradlew check` | **Green** (301 actionable tasks) |
-| Next task | `P2-6` — Room schema and DAOs |
+| Build status | **Green.** `./gradlew check` passes |
+| `./gradlew check` | **Green** (314 actionable tasks) |
+| Next task | `P2-7` — Migrations, with tests |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-2-data-and-core` |
@@ -30,6 +30,41 @@ Rules:
 ---
 
 ## Entries
+
+### 2026-09-29 — Phase 2 redacting log tree and the redaction pass (P2-10)
+
+**Phase:** 2 · **Tasks:** P2-10
+
+**What was built**
+
+| Task | Artefact | State |
+|---|---|---|
+| P2-10 | `shared/core/.../LogRedactor.kt` | `LogRecord`, `LogWriter`, `LogRedactor`, `RedactingLogTree` per `11-operations/logging.md`: redaction by value shape (10 credential shapes, JWT, Bearer, token/key/secret/access_token query parameters), by attribute name (secrets, identity, content, tool IO, path shortening), and the 512-character truncation rule |
+| P2-10 | `shared/core/.../LogRedactorTest.kt` | 45 tests over 40+ fixtures. Every fixture is constructed at runtime from fragments so no credential-shaped literal exists in source, per `09-testing/test-data-safety.md` |
+| — | `docs/11-operations/logging.md` | New subsection: the pass is structural — every writer sits behind `RedactingLogTree` |
+
+**What was verified**
+
+- `./gradlew :shared:core:check`: 45/45 new tests pass (51 total in the module).
+- `bash scripts/check-no-secrets.sh`: green — the fixture construction does not trip the scanner.
+- `tools/check_no_android_imports_in_shared.py`: 0 forbidden imports across 45 pure-module files.
+
+**Decisions**
+
+| Decision | Why | Where recorded |
+|---|---|---|
+| The tree wraps the writer, not the call sites | A filter a call site can forget is not a filter. With the pass at the writer boundary, a writer added later is redacted by construction | `11-operations/logging.md`, "The pass is structural" |
+| Shape rules keep a short visible prefix (`sk-ant-…redacted`) instead of a generic marker | A log stays diagnosable — the reader can tell which credential *kind* failed without seeing the value | `LogRedactor.kt` |
+| `DefaultRedactor` (P0-8) stays for raw non-record text; the tables are not merged | The two serve different readers: exports versus the log path. Merging them would couple the export marker to the log marker for no benefit | `LogRedactor.kt` KDoc |
+
+**Risk register changes**
+
+None.
+
+**What was skipped**
+
+- `FileLogWriter`/`AndroidLogWriter` are not part of P2-10; they arrive with the androidApp wiring and the diagnostics export. The tree accepts any `LogWriter`.
+- The `knownSecrets` seam is wired but empty until P2-9 lands the `SecretStore`.
 
 ### 2026-09-29 — Phase 2 room schema and DAOs (P2-6)
 

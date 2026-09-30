@@ -80,6 +80,10 @@ There is no `log.debug("…$token")` that compiles with a string. The typed-attr
 
 Any single string attribute over 512 characters is truncated with a marker. Logs are for diagnosis; a 4 MB stack of JSON in a log file helps nobody.
 
+### The pass is structural
+
+Every writer sits behind `RedactingLogTree` in `shared/core/LogRedactor.kt`, which applies `LogRedactor` to the record before the writer sees it. There is no writer path that skips the pass, and a writer added later sits behind the same tree by construction. The value shapes, the attribute-name table, and the length rule above are implemented there; the `SecretStore` values join through the `knownSecrets` seam when P2-9 lands. The redaction pass is covered by 45 tests in `shared/core` (`LogRedactorTest`), built from runtime-constructed fixtures per `09-testing/test-data-safety.md`.
+
 ## What is never logged, in any build
 
 - API keys, tokens, cookies, `Authorization` headers — by shape and by name.
