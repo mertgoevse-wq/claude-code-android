@@ -20,6 +20,7 @@ public data class Project(
     val remoteName: String? = null,
     val isPrivate: Boolean = true,
     val defaultBranch: String? = null,
+    val description: String? = null,
     val isArchived: Boolean = false,
     val lastRunAt: Long? = null,
     val createdAt: Long,

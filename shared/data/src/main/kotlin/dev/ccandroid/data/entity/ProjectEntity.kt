@@ -3,6 +3,7 @@ package dev.ccandroid.data.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import dev.ccandroid.domain.Project
 import dev.ccandroid.domain.ProjectKind
 
 @Entity(
@@ -23,6 +24,7 @@ data class ProjectEntity(
     val remoteName: String? = null,
     val isPrivate: Boolean = true,
     val defaultBranch: String? = null,
+    val description: String? = null,
     val isArchived: Boolean = false,
     val lastRunAt: Long? = null,
     val createdAt: Long,
@@ -40,6 +42,7 @@ data class ProjectEntity(
             remoteName = project.remoteName,
             isPrivate = project.isPrivate,
             defaultBranch = project.defaultBranch,
+            description = project.description,
             isArchived = project.isArchived,
             lastRunAt = project.lastRunAt,
             createdAt = project.createdAt,
@@ -58,6 +61,7 @@ data class ProjectEntity(
         remoteName = remoteName,
         isPrivate = isPrivate,
         defaultBranch = defaultBranch,
+        description = description,
         isArchived = isArchived,
         lastRunAt = lastRunAt,
         createdAt = createdAt,

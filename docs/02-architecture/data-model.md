@@ -42,6 +42,7 @@ The unit of work and the unit of trust. Autonomy lives here, not globally, becau
 | `remoteName` | String? | `repo` |
 | `isPrivate` | Boolean | Always `true`. Stored explicitly so the invariant is visible, and asserted. |
 | `defaultBranch` | String? | `main`, `master`, or whatever. Not assumed. |
+| `description` | String? | Optional description of the project. |
 | `isArchived` | Boolean | Archiving hides a project; it never deletes anything. |
 | `lastRunAt` | Long? | Denormalised for sorting |
 | `createdAt` / `updatedAt` | Long | |

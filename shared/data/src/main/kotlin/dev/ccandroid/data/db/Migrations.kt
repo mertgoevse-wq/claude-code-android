@@ -1,6 +1,7 @@
 package dev.ccandroid.data.db
 
 import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * The migration chain, per `docs/02-architecture/data-migrations.md`.
@@ -26,7 +27,13 @@ public object Migrations {
     public const val FIRST_VERSION: Int = 1
 
     /** Every step, ascending. Empty while the schema is still at [FIRST_VERSION]. */
-    public val STEPS: List<Step> = emptyList()
+    public val STEPS: List<Step> = listOf(
+        Step(from = 1, to = 2, migration = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE projects ADD COLUMN description TEXT")
+            }
+        })
+    )
 
     /**
      * The validated chain for a database that declares [currentVersion].
