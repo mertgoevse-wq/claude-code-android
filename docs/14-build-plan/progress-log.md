@@ -15,11 +15,11 @@ Rules:
 
 | Field | Value |
 |---|---|
-| Phase | **2 — Data and core (in progress, P2-1 … P2-7 done)** |
+| Phase | **2 — Data and core (in progress, P2-1 … P2-8 done)** |
 | Last updated | 2026-09-30 |
 | Build status | **Green.** `./gradlew check` passes |
 | `./gradlew check` | **Green** (314 actionable tasks) |
-| Next task | `P2-8` — Repositories in `shared/data` |
+| Next task | `P2-9` — SecretStore on the Keystore, `SecretRef` everywhere |
 | Blockers | **1 open — B2 (the build machine is the target device).** See `docs/14-build-plan/blocker-B2-self-hosting-device-install.md` |
 | Open risks at full exposure | R1 (the ELF patch), R9 (doc drift), R10 (ANSI palette verified) |
 | Repository | `github.com/mertgoevse-wq/claude-code-android`, **private**. Branch `task/phase-2-data-and-core` |

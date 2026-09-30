@@ -326,6 +326,44 @@ class RoomRepositoriesTest {
         assertEquals("turn_02", repo.getLastTurn("conv_01").getOrThrow()?.id)
     }
 
+    @Test
+    fun `updating a turn persists its changes`() = runTest {
+        val repo: TurnRepository = repos.turn
+        val convRepo: ConversationRepository = repos.conversation
+        convRepo.insert(conversation()).getOrThrow()
+
+        val originalTurn = turn("turn_01", "conv_01", 0)
+        repo.insert(originalTurn).getOrThrow()
+
+        val updatedTurn = originalTurn.copy(
+            state = TurnState.RUNNING,
+            endedAt = 2000L
+        )
+        repo.update(updatedTurn).getOrThrow()
+
+        val loaded = repo.getById("turn_01").getOrThrow()
+        assertNotNull(loaded)
+        assertEquals(TurnState.RUNNING, loaded?.state)
+        assertEquals(2000L, loaded?.endedAt)
+    }
+
+    @Test
+    fun `getById returns the correct turn`() = runTest {
+        val repo: TurnRepository = repos.turn
+        val convRepo: ConversationRepository = repos.conversation
+        convRepo.insert(conversation()).getOrThrow()
+
+        val turn1 = turn("turn_01", "conv_01", 0)
+        val turn2 = turn("turn_02", "conv_01", 1)
+        repo.insert(turn1).getOrThrow()
+        repo.insert(turn2).getOrThrow()
+
+        val loaded = repo.getById("turn_02").getOrThrow()
+        assertNotNull(loaded)
+        assertEquals("turn_02", loaded?.id)
+        assertEquals(1, loaded?.index)
+    }
+
     // --- message repository ----------------------------------------------
 
     @Test
@@ -365,6 +403,60 @@ class RoomRepositoriesTest {
         val messages = msgRepo.getByTurn("turn_01").getOrThrow()
 
         assertEquals(listOf("msg_01", "msg_02"), messages.map { it.id })
+    }
+
+    @Test
+    fun `updating a message persists its changes`() = runTest {
+        val msgRepo: MessageRepository = repos.message
+        val turnRepo: TurnRepository = repos.turn
+        val convRepo: ConversationRepository = repos.conversation
+        convRepo.insert(conversation()).getOrThrow()
+        turnRepo.insert(turn("turn_01", "conv_01", 0)).getOrThrow()
+
+        val originalMessage = message("msg_01", "turn_01")
+        msgRepo.insert(originalMessage).getOrThrow()
+
+        val updatedMessage = originalMessage.copy(
+            renderedMarkdown = "updated content",
+            role = MessageRole.ASSISTANT
+        )
+        msgRepo.update(updatedMessage).getOrThrow()
+
+        val loaded = msgRepo.getByTurn("turn_01").getOrThrow().firstOrNull { it.id == "msg_01" }
+        assertNotNull(loaded)
+        assertEquals("updated content", loaded?.renderedMarkdown)
+        assertEquals(MessageRole.ASSISTANT, loaded?.role)
+    }
+
+    @Test
+    fun `updating a message part persists its changes`() = runTest {
+        val msgRepo: MessageRepository = repos.message
+        val turnRepo: TurnRepository = repos.turn
+        val convRepo: ConversationRepository = repos.conversation
+        convRepo.insert(conversation()).getOrThrow()
+        turnRepo.insert(turn("turn_01", "conv_01", 0)).getOrThrow()
+
+        val originalMessage = message("msg_01", "turn_01")
+        msgRepo.insert(originalMessage).getOrThrow()
+        val originalPart = MessagePart(
+            id = "part_01",
+            messageId = "msg_01",
+            kind = MessagePartKind.TEXT,
+            ordinal = 0,
+            payloadJson = "{\"original\": \"data\"}"
+        )
+        msgRepo.insertPart(originalPart).getOrThrow()
+
+        val updatedPart = originalPart.copy(
+            kind = MessagePartKind.IMAGE_URL,
+            payloadJson = "{\"url\": \"http://example.com/image.png\"}"
+        )
+        msgRepo.updatePart(updatedPart).getOrThrow()
+
+        val loaded = msgRepo.getParts("msg_01").getOrThrow().firstOrNull { it.id == "part_01" }
+        assertNotNull(loaded)
+        assertEquals(MessagePartKind.IMAGE_URL, loaded?.kind)
+        assertEquals("{\"url\": \"http://example.com/image.png\"}", loaded?.payloadJson)
     }
 
     // --- run repository ----------------------------------------------------
@@ -415,8 +507,27 @@ class RoomRepositoriesTest {
 
         assertEquals(1_400L, repo.getTotalCost("proj_01").getOrThrow())
         assertEquals(400L, repo.getTotalCostByConversation("conv_01").getOrThrow())
-        assertEquals(1_000L, repo.getTotalCostByConversation("conv_02").getOrThrow())
+        assertEquals(1_000L, repo.getTotalCostByConversation("conv").getOrThrow())
         assertEquals(2, repo.getByRunId("run_01").getOrThrow().size)
+    }
+
+    @Test
+    fun `getByProjectId returns cost records for the correct project`() = runTest {
+        val repo: CostRepository = repos.cost
+        // Insert cost records for two different projects
+        repo.insert(costRecord("cost_01", "run_01", micros = 100, projectId = "proj_a")).getOrThrow()
+        repo.insert(costRecord("cost_02", "run_01", micros = 200, projectId = "proj_a")).getOrThrow()
+        repo.insert(costRecord("cost_03", "run_02", micros = 300, projectId = "proj_b")).getOrThrow()
+
+        val projACosts = repo.getByProjectId("proj_a").getOrThrow()
+        val projBCosts = repo.getByProjectId("proj_b").getOrThrow()
+        val emptyProjCosts = repo.getByProjectId("empty").getOrThrow()
+
+        assertEquals(2, projACosts.size)
+        assertEquals(100L + 200L, projACosts.sumOf { it.costUsdMicros })
+        assertEquals(1, projBCosts.size)
+        assertEquals(300L, projBCosts.firstOrNull()?.costUsdMicros)
+        assertTrue(emptyProjCosts.isEmptyOrNull())
     }
 
     // --- plan repository --------------------------------------------------------
@@ -478,6 +589,24 @@ class RoomRepositoriesTest {
         val loaded = repo.getById("ver_01").getOrThrow()
         assertNotNull(loaded)
         assertEquals(VerificationState.PASSED, loaded?.state)
+    }
+
+    @Test
+    fun `updating a verification run persists its changes`() = runTest {
+        val repo: VerificationRepository = repos.verification
+        val originalRun = verification("ver_01", "run_01")
+        repo.insert(originalRun).getOrThrow()
+
+        val updatedRun = originalRun.copy(
+            state = VerificationState.FAILED,
+            durationMs = 5000
+        )
+        repo.update(updatedRun).getOrThrow()
+
+        val loaded = repo.getById("ver_01").getOrThrow()
+        assertNotNull(loaded)
+        assertEquals(VerificationState.FAILED, loaded?.state)
+        assertEquals(5000, loaded?.durationMs)
     }
 
     // --- project settings repository ------------------------------------------------

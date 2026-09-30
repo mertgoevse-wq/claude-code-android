@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "c48aff4e7aa25422e0bb04cc547933a8",
+    "identityHash": "51b6173e9a922576b4f6d6dafcd12275",
     "entities": [
       {
         "tableName": "projects",
@@ -61,11 +61,6 @@
           {
             "fieldPath": "defaultBranch",
             "columnName": "defaultBranch",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "description",
-            "columnName": "description",
             "affinity": "TEXT"
           },
           {
@@ -2395,7 +2390,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c48aff4e7aa25422e0bb04cc547933a8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '51b6173e9a922576b4f6d6dafcd12275')"
     ]
   }
 }
