@@ -31,6 +31,12 @@ interface RunDao {
     @Query("SELECT * FROM runs WHERE projectId = :projectId ORDER BY startedAt DESC")
     fun observeRunsForProject(projectId: String): Flow<List<RunEntity>>
 
+    @Query("SELECT * FROM runs WHERE projectId = :projectId ORDER BY startedAt DESC")
+    suspend fun getRunsForProject(projectId: String): List<RunEntity>
+
+    @Query("SELECT * FROM runs WHERE state = :state ORDER BY startedAt DESC")
+    suspend fun getRunsByState(state: RunState): List<RunEntity>
+
     @Query("SELECT * FROM runs WHERE state NOT IN ('DONE', 'FAILED', 'CANCELLED', 'INTERRUPTED') ORDER BY startedAt DESC")
     fun observeActiveRuns(): Flow<List<RunEntity>>
 

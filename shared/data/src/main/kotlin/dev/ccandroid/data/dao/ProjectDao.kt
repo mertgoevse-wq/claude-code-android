@@ -36,4 +36,7 @@ interface ProjectDao {
 
     @Query("SELECT * FROM projects WHERE remoteOwner = :owner AND remoteName = :name LIMIT 1")
     suspend fun getProjectByRemote(owner: String, name: String): ProjectEntity?
+
+    @Query("SELECT * FROM projects ORDER BY lastRunAt DESC, createdAt DESC")
+    suspend fun getAllProjects(): List<ProjectEntity>
 }

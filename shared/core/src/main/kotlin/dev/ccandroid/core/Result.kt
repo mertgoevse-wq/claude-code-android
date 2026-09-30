@@ -1,5 +1,6 @@
 package dev.ccandroid.core
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -74,11 +75,17 @@ public class OutcomeException(val error: AppError) : Exception(
 /**
  * Wraps a suspend block into an Outcome, catching any Throwable and converting
  * it to a generic AppError.Simple.
+ *
+ * A cancellation is rethrown, not converted: code rule 5 makes cancellation
+ * propagate, and a boundary helper that turned it into a failure would make
+ * every repository in the app swallow the user leaving the screen.
  */
 public suspend fun <T> tryCatch(block: suspend () -> T): Outcome<T> {
     try {
         return Outcome.Success(block())
     } catch (e: OutcomeException) {
+        throw e
+    } catch (e: CancellationException) {
         throw e
     } catch (e: Throwable) {
         return Outcome.Failure(

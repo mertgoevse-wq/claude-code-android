@@ -28,6 +28,9 @@ interface VerificationDao {
     @Query("SELECT * FROM verification_runs WHERE runId = :runId ORDER BY attempt DESC")
     fun observeVerificationRunsForRun(runId: String): Flow<List<VerificationRunEntity>>
 
+    @Query("SELECT * FROM verification_runs WHERE runId = :runId ORDER BY attempt DESC")
+    suspend fun getVerificationRunsForRun(runId: String): List<VerificationRunEntity>
+
     @Query("SELECT * FROM verification_runs WHERE runId = :runId ORDER BY attempt DESC LIMIT 1")
     suspend fun getLatestVerificationRun(runId: String): VerificationRunEntity?
 

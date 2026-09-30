@@ -36,4 +36,7 @@ interface ConversationDao {
 
     @Query("UPDATE conversations SET isArchived = 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun archiveConversation(id: String, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM conversations WHERE projectId = :projectId ORDER BY updatedAt DESC")
+    suspend fun getConversationsForProject(projectId: String): List<ConversationEntity>
 }

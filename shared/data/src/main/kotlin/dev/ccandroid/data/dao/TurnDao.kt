@@ -27,4 +27,7 @@ interface TurnDao {
 
     @Query("SELECT * FROM turns WHERE runId = :runId LIMIT 1")
     suspend fun getTurnByRunId(runId: String): TurnEntity?
+
+    @Query("SELECT * FROM turns WHERE conversationId = :conversationId ORDER BY `index` ASC")
+    suspend fun getTurnsForConversation(conversationId: String): List<TurnEntity>
 }
