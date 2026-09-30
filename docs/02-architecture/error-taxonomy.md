@@ -138,6 +138,14 @@ These are refusals, not failures. They are presented differently: calm, and with
 | `PERMISSION_DENIED_ANDROID` | No | "Android hat die Berechtigung verweigert." | Names the permission and links to the system settings. |
 | `BIOMETRIC_UNAVAILABLE` | No | "Es ist keine Bildschirmsperre eingerichtet." | Falls back to the device credential, then to no lock, and says which. |
 
+### Secrets and settings
+
+| Code | Retryable | User sees (de) | App does |
+|---|---|---|---|
+| `SECRET_PROFILE_NOT_FOUND` | No | "Schlüsselprofil nicht gefunden. Weise dem Anbieter ein Schlüssel zu." | Marks the provider `BROKEN` in the list; offers "Schlüssel zuordnen". Never silently disables it. |
+| `SECRET_STORE_FAILED` | No | "Der Schlüssel konnte nicht gesichert werden." | Ends the operation before any partial state is written. Never falls back to plaintext. |
+| `SETTINGS_SECRET_SHAPED` | No | "Dieser Wert sieht nach einem Schlüssel aus und wird nicht in den Einstellungen gespeichert." | Refuses the write. The value looks like a credential; `AppSetting` never holds one (`data-model.md` §AppSetting). |
+
 ## Presentation rules
 
 1. **Two lines, always.** Line one: what happened, in plain language, no jargon. Line two: what to do. Raw technical text is available beneath, collapsed.

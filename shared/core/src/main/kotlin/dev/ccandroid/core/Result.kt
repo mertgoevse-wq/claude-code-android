@@ -1,5 +1,9 @@
 package dev.ccandroid.core
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
 /**
@@ -30,24 +34,68 @@ public sealed interface Outcome<out T> {
         is Success -> null
         is Failure -> error
     }
+
+    public fun <R> map(transform: (T) -> R): Outcome<R> = when (this) {
+        is Success -> Success(transform(value))
+        is Failure -> this
+    }
+
+    public fun <R> flatMap(transform: (T) -> Outcome<R>): Outcome<R> = when (this) {
+        is Success -> transform(value)
+        is Failure -> this
+    }
+
+    public fun onSuccess(action: (T) -> Unit): Outcome<T> {
+        if (this is Success) action(value)
+        return this
+    }
+
+    public fun onFailure(action: (AppError) -> Unit): Outcome<T> {
+        if (this is Failure) action(error)
+        return this
+    }
+
+    /**
+     * Throws the error if this is a Failure, otherwise returns the value.
+     * Use sparingly - prefer flatMap/map for chaining.
+     */
+    public fun getOrThrow(): T = when (this) {
+        is Success -> value
+        is Failure -> throw OutcomeException(error)
+    }
 }
 
-public inline fun <T, R> Outcome<T>.map(transform: (T) -> R): Outcome<R> = when (this) {
-    is Outcome.Success -> Outcome.Success(transform(value))
-    is Outcome.Failure -> this
-}
+/**
+ * Exception wrapper for Outcome failures to enable throwing in getOrThrow.
+ */
+public class OutcomeException(val error: AppError) : Exception(
+    "${error.code}: ${error.messageEn}",
+)
 
-public inline fun <T, R> Outcome<T>.flatMap(transform: (T) -> Outcome<R>): Outcome<R> = when (this) {
-    is Outcome.Success -> transform(value)
-    is Outcome.Failure -> this
-}
-
-public inline fun <T> Outcome<T>.onSuccess(action: (T) -> Unit): Outcome<T> {
-    if (this is Outcome.Success) action(value)
-    return this
-}
-
-public inline fun <T> Outcome<T>.onFailure(action: (AppError) -> Unit): Outcome<T> {
-    if (this is Outcome.Failure) action(error)
-    return this
+/**
+ * Wraps a suspend block into an Outcome, catching any Throwable and converting
+ * it to a generic AppError.Simple.
+ *
+ * A cancellation is rethrown, not converted: code rule 5 makes cancellation
+ * propagate, and a boundary helper that turned it into a failure would make
+ * every repository in the app swallow the user leaving the screen.
+ */
+public suspend fun <T> tryCatch(block: suspend () -> T): Outcome<T> {
+    try {
+        return Outcome.Success(block())
+    } catch (e: OutcomeException) {
+        throw e
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        return Outcome.Failure(
+            AppError.Simple(
+                code = ErrorCode.UNKNOWN_ERROR,
+                messageDe = "Unerwarteter Fehler: ${e.message}",
+                messageEn = "Unexpected error: ${e.message}",
+                retryable = false,
+                details = e.javaClass.simpleName,
+            )
+        )
+    }
 }

@@ -1,3 +1,26 @@
 <resources>
     <string name="app_name">Claude Code</string>
+
+    <!-- Common actions. German is the default locale (values/); values-en
+         carries the English alternative. A string lands here only when a
+         screen binds it — the i18n skeleton grows with the screens of
+         Phase 4, per docs/14-build-plan/task-breakdown.md P2-12. -->
+    <string name="action_ok">OK</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_retry">Erneut versuchen</string>
+    <string name="action_archive">Archivieren</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="action_new_chat">Neuer Chat</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_language">Sprache</string>
+    <string name="settings_theme">Erscheinungsbild</string>
+    <string name="settings_providers">Anbieter</string>
+    <string name="settings_secrets">Schlüsselprofile</string>
+
+    <!-- The deletion refusal, so the copy is reviewed once and translated
+         once rather than embedded in code paths (hard block 1). -->
+    <string name="delete_refused_title">Löschen ist dauerhaft deaktiviert</string>
+    <string name="delete_refused_body">Nichts wird gelöscht. Archiviere stattdessen — archivierte Inhalte bleiben vollständig sichtbar.</string>
 </resources>

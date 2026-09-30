@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 public enum class AutonomyLevel {
-    MANUAL,
-    INTERACTIVE,
-    AUTONOMOUS,
-    FULL_AUTONOMY
+    ASK_EVERYTHING,
+    ASK_RISKY,
+    AUTO_WITH_CHECKPOINTS,
+    FULL_AUTO,
 }

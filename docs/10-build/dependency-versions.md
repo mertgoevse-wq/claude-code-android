@@ -10,10 +10,12 @@ agp = "8.9.1"
 kotlin = "2.1.20"
 ksp = "2.1.20-1.0.32"
 composeBom = "2025.05.00"
-room = "2.6.1"
+room = "2.7.1"
+sqlite = "2.7.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
 okhttp = "4.12.0"
+ktor = "3.2.3"
 retrofit = "2.11.0"
 datastore = "1.1.1"
 work = "2.9.1"
@@ -44,7 +46,37 @@ sqlcipher = "4.6.1"
 | `androidx.datastore:datastore-preferences` | 1.1.1 | Settings, non-secret preferences |
 | `androidx.biometric:biometric` | 1.1.0 | App lock |
 | `androidx.security:security-crypto` | 1.1.0-alpha06 | Only for the Keystore wrapper; see the note below |
-| `androidx.sqlite:sqlite` | 2.4.0 | Bundled SQLite, for `SQLCipher` |
+| `androidx.sqlite:sqlite` | 2.7.1 (was 2.4.0) | Bundled SQLite base, aligned with Room 2.7.1's KMP artifacts. Looked up 2026-09-29 via Google Maven (`dl.google.com/android/maven2/androidx/sqlite/sqlite/maven-metadata.xml`), latest stable |
+
+## Networking
+
+| Alias | Version | Why |
+|---|---|---|
+| `io.ktor:ktor-client-core` | 3.2.3 | The provider client. A turn is server-sent events parsed incrementally, and a response is never buffered whole because a streaming turn can be megabytes of deltas. Ktor gives one API across Android and the iOS target |
+| `io.ktor:ktor-client-okhttp` | 3.2.3 | The Android engine. The engine is injected, so the tests replace it with a `MockEngine` and never open a socket |
+| `io.ktor:ktor-client-mock` | 3.2.3 | Test only |
+| `com.squareup.okhttp3:okhttp` | 4.12.0 | Already present; kept for the bootstrap download, which is a plain file fetch and not a provider call |
+
+### Why 3.2.3 and not the latest
+
+**Ktor 3.2.3 is the newest release this build can compile against, and the
+constraint is the Kotlin version, not a preference.**
+
+Ktor 3.3.0 moved its own build to Kotlin 2.2 (KTOR-8647, in the upstream
+changelog), and Ktor 3.6.0 — the current release, 2026-09-17 — ships Kotlin 2.3
+metadata. The Kotlin 2.1.20 compiler in this project refuses to read it:
+
+```
+Module was compiled with an incompatible version of Kotlin.
+The binary version of its metadata is 2.3.0, expected version is 2.1.0.
+```
+
+3.2.3 (2025-07-29) is the last release before that upgrade. Raising Ktor means
+raising Kotlin, AGP, KSP, the Compose BOM and Room together, in one change, with
+the gate green. It does not mean pinning Ktor alone and hoping.
+
+Looked up 2026-09-30 on `ktor.io/docs/releases.html`. Licence: Apache 2.0, already
+in `THIRD_PARTY_NOTICES.md`.
 
 ## Compose
 
@@ -69,8 +101,8 @@ Material 3 is the base, but the app's components are **hand-built on the design 
 
 | Alias | Version | Why |
 |---|---|---|
-| `room-runtime`, `room-ktx`, `room-compiler` | 2.6.1 | Persistence. The schema is in `02-architecture/data-model.md`. |
-| `sqlite-bundled` | 2.4.0 | Needed for SQLCipher, which replaces the platform SQLite |
+| `room-runtime`, `room-ktx`, `room-compiler` | 2.7.1 (was 2.6.1) | Persistence. The schema is in `02-architecture/data-model.md`. 2.7.x is the KMP release line: the runtime ships real JVM artifacts (`room-runtime-jvm`) and accepts a pluggable `SQLiteDriver`, which is what the DAO tests run on (see the testing table). Looked up 2026-09-29 via Google Maven, latest stable |
+| `sqlite-bundled` (test) | 2.7.1 | `BundledSQLiteDriver` for the JVM DAO tests — ships `natives/linux_arm64`, which the build host needs (Robolectric's native runtime does not; see the testing table). Looked up 2026-09-29 via Google Maven |
 | `sqlcipher-android` | 4.6.1 | Encrypted database. The transcripts contain prompts and code; they are encrypted at rest. |
 | `kotlinx-serialization-json` | 1.7.3 | Event parsing. Chosen over Moshi/Gson for explicit null handling and Kotlin multiplatform portability. |
 | `kotlinx-coroutines-core`, `-android`, `-test` | 1.9.0 | The concurrency model in `02-architecture/concurrency-model.md` is built on it |
@@ -107,8 +139,9 @@ Hilt is used for the graph but kept out of the domain layer. `:core:model`, `:co
 | `junit` | 4.13.2 | The stable base |
 | `mockk` | 1.13.13 | Mocking for the unit layer; final classes, coroutines |
 | `kotlinx-coroutines-test` | 1.9.0 | Virtual time |
-| `robolectric` | 4.14.1 | Android framework on the JVM, for Room and parcelables |
-| `room-testing` | 2.6.1 | In-memory databases |
+| `robolectric` | 4.14.1 | Android framework on the JVM, for parcelables and non-database platform tests. **Not usable for Room/DAO tests on this project's ARM64 build host**: Robolectric's native runtime ships no `linux/aarch64` build (verified 2026-09-29 against `nativeruntime-dist-compat` up to 1.0.19; upstream: robolectric/robolectric#9166) |
+| `room-testing` | 2.7.1 | Migration test helpers |
+| `sqlite-bundled-jvm` (test) | 2.7.1 | The DAO tests run as plain JVM tests on Room's KMP path with `BundledSQLiteDriver` — the setup the Room documentation recommends for local database tests. The test configuration pins the `-jvm` variants explicitly, because the root artifacts of Room 2.7.x are metadata stubs and the Android variant's native loader only knows `System.loadLibrary` |
 | `paparazzi` | 1.3.5 | Golden images on the host JVM |
 | `roborazzi` | 1.26.0 | The cases Paparazzi renders unfaithfully |
 | `androidx.test.ext:junit` | 1.2.1 | Instrumented tests |

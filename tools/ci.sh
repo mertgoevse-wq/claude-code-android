@@ -18,6 +18,9 @@ python3 tools/check_source_manifest.py --phase 0
 echo "3. Checking layer discipline (no Android imports in pure shared)..."
 python3 tools/check_no_android_imports_in_shared.py
 
+echo "3b. Checking typed errors at boundaries (no bare throw in shared)..."
+python3 tools/check_typed_errors_at_boundaries.py
+
 echo "4. Checking for secrets..."
 bash scripts/check-no-secrets.sh
 

@@ -12,17 +12,43 @@ A migration strategy that survives contact with a user who upgrades mid-task.
 
 ## Versioning
 
-`AppDatabase.version` is the single source. Migrations live in `shared/data/db/Migrations.kt`, one object per version, composed in order:
+`AppDatabase.version` is the single source. Migrations live in `shared/data/db/Migrations.kt`, one `Step` per version, composed in order:
 
 ```kotlin
-val MIGRATIONS: Array<AutoMigrationSpec> = arrayOf(
-    AutoMigrationSpec(from = 1, to = 2, spec = Migration_1_2),
-    AutoMigrationSpec(from = 2, to = 3, spec = Migration_2_3),
+val STEPS: List<Step> = listOf(
+    Step(from = 1, to = 2, migration = Migration_1_2),
+    Step(from = 2, to = 3, migration = Migration_2_3),
     // ...
 )
 ```
 
-`.fallbackToDestructiveMigration()` is **banned**. It appears nowhere in the codebase, and a test greps for it. An unhandled version gap is a crash on upgrade, which is loud, survivable, and reported — silently erasing a user's project history is neither.
+A step carries its own `from` and `to` rather than reading them back off the
+`Migration`, whose version accessors are internal to Room and unreadable from
+Kotlin. The two numbers are the whole point of a step, so they live where they can
+be checked.
+
+`MigrationChain.requireContinuousFromFirstVersion()` fails unless the steps run
+back to back from version 1, and `Migrations.chain(AppDatabase.version)` fails
+unless the chain ends at the version the database declares. A schema version with
+no step is therefore a loud failure at startup, not a silent erase.
+
+Work that has to happen *after* a step succeeds — marking runs interrupted by the
+update, for example — is an `AutoMigrationSpec` registered with
+`addAutoMigrationSpec`, not a migration. A migration is a data transformation; the
+spec is a callback.
+
+`.fallbackToDestructiveMigration()` is **banned**. It appears nowhere in the code,
+and `MigrationFixtureTest` greps every `src/main/kotlin` for the call, ignoring
+comments so the documents and the KDoc can still say what is banned and why. An
+unhandled version gap is a crash on upgrade, which is loud, survivable, and
+reported — silently erasing a user's project history is neither.
+
+## The chain as declared
+
+The chain is currently **empty**: version 1 is the first released schema, so
+there is nothing to migrate from. It is declared and validated anyway, because a
+chain that first appears when it is needed is a chain that has never been
+validated.
 
 ## The current chain
 
@@ -54,20 +80,70 @@ The rule from point 4, stated as a policy:
 
 > An enum stored in the database may contain a value this version of the app does not know. Reading it must return null or a documented default, never throw, and never crash a list.
 
-The test for this: the migration test chain includes a fixture row with a deliberately future enum value, and every screen that could render it is exercised. This is not hypothetical — it is exactly what happens after every app update that ships a new enum value, on every device that skipped an intermediate version.
+This is not hypothetical — it is exactly what happens after every app update that
+ships a new enum value, on every device that skipped an intermediate version.
+
+The fallback is chosen by one rule, and only one: **the fallback is never the
+value that proceeds. It is the value that asks.** An unrecognised value is a
+reason to slow down and ask, never a reason to assume permission, a pass, or a
+decision the user owns. The full table, one row per enum, is the `fromStorage`
+fallback list in `shared/data/.../converter/TypeConverters.kt`; `UnknownEnumTest`
+asserts every row.
+
+| Enum | Fallback | Why this one |
+|---|---|---|
+| `AutonomyLevel` | `ASK_EVERYTHING` | A level the app cannot read must ask, not act |
+| `PermissionMode` | `DEFAULT` | Never a bypass, whatever the stored value claimed |
+| `DiffDecision` | `PENDING` | The per-hunk decision is the user's, not the app's |
+| `VerificationState` | `UNVERIFIED` | A run this version cannot interpret must not read as passing |
+| `RunState` | `INTERRUPTED` | The user is offered a resume instead of a fabricated continuation |
+| `OffloadPolicy` | `NEVER` | Do not move a run to another machine on an unread setting |
+| `SkillSourceKind` | `BUILTIN` | Never claim a skill came from GitHub when the row says otherwise |
+| `MessageRole` | `SYSTEM` | Do not attribute text to the user or to the agent |
+| `MessagePartKind` | `TEXT` | Never render an unknown part as a tool card, which claims an action happened |
+| `TestParserType` | `GENERIC` | Show the raw output rather than skip parsing and hide it |
+| `NotificationChannel` | `RUNNER` | The least-claiming channel; a wrong channel is a wrong notification |
+| `ToolInvocationStatus` | `PENDING` | Re-evaluate rather than assume a tool finished |
+| `PlanStepState` | `SKIPPED` | Never claim a step completed on the app's initiative |
+| `FileChangeType` | `MODIFIED` | The neutral glyph, when the real change type is unknown |
+| `ProviderKind` | `CUSTOM` | An unknown provider is a custom endpoint, which is what the row must be treated as |
+| `RemoteTargetKind` | `SSH` | The kind the app can actually act on |
+| `RemoteTargetStatus` | `UNKNOWN` | Never assert reachability the app could not read |
+| `ProjectKind` | `LOCAL` | The conservative kind; nothing leaves the device on an unread value |
+| `SessionLogCategory` | `SYSTEM` | A log line is always a system line |
+| `SessionLogSeverity` | `INFO` | Do not raise an alarm on a value the app cannot read |
+| `SkillInstallScope` | `GLOBAL` | The scope the app can reason about without knowing better |
+
+`RunState.isTerminal` in the domain is the one place that decides which runs have
+ended, so the post-migration spec and any query that needs the answer read the
+same set.
 
 ## Migration testing
 
-| Test | What it covers |
-|---|---|
-| `MigrationChainTest` | Walks version 1 → current, one step at a time, asserting data after every step |
-| `MigrationFixtureTest` | A representative database from each released version, migrated forward |
-| `UnknownEnumTest` | Future enum values in every table, read by every repository, no crash |
-| `DedupeTest` | The unique-index migration on a database full of duplicates |
-| `LargeDatabaseTest` | 10,000 turns, to catch an accidentally O(n²) migration |
-| `InterruptedMigrationTest` | Kill the process mid-migration; the next launch recovers. Room's transaction guarantees this, and the test proves it rather than assuming it. |
+| Test | What it covers | State |
+|---|---|---|
+| `MigrationChainTest` | The chain rules: contiguity from version 1, forward-only, a version the chain cannot reach is refused, a step that does not move forward is refused | Done |
+| `MigrationFixtureTest` | A database built from the committed schema export, a real additive step applied to it, an interrupted step rolled back, 10,000 rows without a quadratic step, and the `fallbackToDestructiveMigration` ban | Done |
+| `UnknownEnumTest` | A row written by a later version, read back through a DAO, plus every converter's documented fallback | Done |
+| `InterruptedRunSpecTest` | The post-migration spec: in-flight runs become `INTERRUPTED` with a recorded reason, terminal runs are untouched, a second pass changes nothing | Done |
+| `DedupeTest` | The unique-index migration on a database full of duplicates | Waiting on a step that adds a unique index to existing data |
+| Screen-level enum rendering | A future enum value rendered in each screen that can show one | Phase 4, with the screens |
 
-**The fixture rule:** a database fixture is captured from a real released version, scrubbed of anything personal, and committed. When we ship a version, we capture a fixture for the next migration test. A migration without a fixture from its real predecessor is not finished.
+**The fixture rule:** a database fixture is captured from a real released version,
+scrubbed of anything personal, and committed. When we ship a version, we capture
+a fixture for the next migration test. A migration without a fixture from its real
+predecessor is not finished.
+
+The fixture is the exported schema JSON, not a database built from the current
+entities. Building the "old" database out of today's code would make every
+migration test pass against a broken migration, because the broken state would be
+the only state it had ever seen.
+
+Fixture files are named with a per-run id. A test that dies halfway through
+building its fixture leaves a half-built file behind, and a fixed name would hand
+that file to the next run. They accumulate under `build/`, which is gitignored,
+and nothing is deleted — deleting is one of the five things this project never
+does.
 
 ## Interaction with a running task
 
