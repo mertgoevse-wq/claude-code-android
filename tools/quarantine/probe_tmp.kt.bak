@@ -1,0 +1,3 @@
+package dev.ccandroid.data
+fun boom(): Int { throw IllegalStateException("bare") }
+fun elvis(): Int = null ?: throw IllegalArgumentException("also bare")

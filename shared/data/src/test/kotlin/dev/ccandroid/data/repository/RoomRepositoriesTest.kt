@@ -448,15 +448,15 @@ class RoomRepositoriesTest {
         msgRepo.insertPart(originalPart).getOrThrow()
 
         val updatedPart = originalPart.copy(
-            kind = MessagePartKind.IMAGE_URL,
-            payloadJson = "{\"url\": \"http://example.com/image.png\"}"
+            kind = MessagePartKind.CODE,
+            payloadJson = "{\"code\": \"print('hello')\"}"
         )
         msgRepo.updatePart(updatedPart).getOrThrow()
 
         val loaded = msgRepo.getParts("msg_01").getOrThrow().firstOrNull { it.id == "part_01" }
         assertNotNull(loaded)
-        assertEquals(MessagePartKind.IMAGE_URL, loaded?.kind)
-        assertEquals("{\"url\": \"http://example.com/image.png\"}", loaded?.payloadJson)
+        assertEquals(MessagePartKind.CODE, loaded?.kind)
+        assertEquals("{\"code\": \"print('hello')\"}", loaded?.payloadJson)
     }
 
     // --- run repository ----------------------------------------------------

@@ -85,6 +85,11 @@ public enum class ErrorCode {
     RUNNER_MISSING_CAPABILITY,
     RUNNER_AUTH_FAILED,
 
+    // Secrets
+    SECRET_PROFILE_NOT_FOUND,
+    SECRET_STORE_FAILED,
+    SETTINGS_SECRET_SHAPED,
+
     // Local and system
     STORAGE_FULL,
     NETWORK_OFFLINE,

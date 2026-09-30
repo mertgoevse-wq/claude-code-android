@@ -82,7 +82,7 @@ import dev.ccandroid.data.entity.VerificationRunEntity
         BranchEntity::class,
         CheckpointEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(AppTypeConverters::class)
