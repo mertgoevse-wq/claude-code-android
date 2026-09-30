@@ -15,6 +15,7 @@ sqlite = "2.7.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
 okhttp = "4.12.0"
+ktor = "3.2.3"
 retrofit = "2.11.0"
 datastore = "1.1.1"
 work = "2.9.1"
@@ -46,6 +47,36 @@ sqlcipher = "4.6.1"
 | `androidx.biometric:biometric` | 1.1.0 | App lock |
 | `androidx.security:security-crypto` | 1.1.0-alpha06 | Only for the Keystore wrapper; see the note below |
 | `androidx.sqlite:sqlite` | 2.7.1 (was 2.4.0) | Bundled SQLite base, aligned with Room 2.7.1's KMP artifacts. Looked up 2026-09-29 via Google Maven (`dl.google.com/android/maven2/androidx/sqlite/sqlite/maven-metadata.xml`), latest stable |
+
+## Networking
+
+| Alias | Version | Why |
+|---|---|---|
+| `io.ktor:ktor-client-core` | 3.2.3 | The provider client. A turn is server-sent events parsed incrementally, and a response is never buffered whole because a streaming turn can be megabytes of deltas. Ktor gives one API across Android and the iOS target |
+| `io.ktor:ktor-client-okhttp` | 3.2.3 | The Android engine. The engine is injected, so the tests replace it with a `MockEngine` and never open a socket |
+| `io.ktor:ktor-client-mock` | 3.2.3 | Test only |
+| `com.squareup.okhttp3:okhttp` | 4.12.0 | Already present; kept for the bootstrap download, which is a plain file fetch and not a provider call |
+
+### Why 3.2.3 and not the latest
+
+**Ktor 3.2.3 is the newest release this build can compile against, and the
+constraint is the Kotlin version, not a preference.**
+
+Ktor 3.3.0 moved its own build to Kotlin 2.2 (KTOR-8647, in the upstream
+changelog), and Ktor 3.6.0 — the current release, 2026-09-17 — ships Kotlin 2.3
+metadata. The Kotlin 2.1.20 compiler in this project refuses to read it:
+
+```
+Module was compiled with an incompatible version of Kotlin.
+The binary version of its metadata is 2.3.0, expected version is 2.1.0.
+```
+
+3.2.3 (2025-07-29) is the last release before that upgrade. Raising Ktor means
+raising Kotlin, AGP, KSP, the Compose BOM and Room together, in one change, with
+the gate green. It does not mean pinning Ktor alone and hoping.
+
+Looked up 2026-09-30 on `ktor.io/docs/releases.html`. Licence: Apache 2.0, already
+in `THIRD_PARTY_NOTICES.md`.
 
 ## Compose
 

@@ -168,6 +168,32 @@ suspend fun test(config: ProviderConfig): TestResult
 
 **Every step is reported separately.** A single "connection failed" for a provider that is reachable but has the wrong model is the least useful message in this domain, and it is what every other tool produces.
 
+### What the implementation does, and where it differs
+
+Three decisions the implementation made that the table above does not spell out,
+each with its reason:
+
+| Decision | Why |
+|---|---|
+| **A refused URL stops the test after step 1.** | Six more failures caused by one typo are noise. The user already has the message that names the typo. |
+| **A 404 from the host is a *reachable* host.** | The endpoint may be wrong; the network is not. Reporting "unreachable" sends the user to check their wifi when the problem is a path. |
+| **Step 7 is not probed.** | A test image costs tokens and, on a metered connection, money, and it downgrades a capability claim the user did not ask about. The claim stays what the provider's own model list said, marked unverified. The step is reported as skipped, not passed. |
+
+**The key is resolved at the request boundary and never held.** It comes in
+through a `SecretResolver` interface, goes into a header, and is gone: no field,
+no parameter that outlives the call, nothing a nearby logger could print. The
+tester holds a `SecretResolver`, never a `String`.
+
+**The client does not retry.** The engine has its own retry layer, surfaced as
+`api_retry` events. Two retry layers multiplying each other is how a rate limit
+becomes a ban, so a 429 is answered exactly once per step and
+`ProviderConnectionTest` asserts it: five steps, five requests, three of them to
+the same endpoint under a 429, and not one repeated.
+
+The engine is injected, so the tests run against a `MockEngine` and open no
+socket. A connection test that needs the internet is a connection test that is
+skipped in CI, which is the same as no test.
+
 ## Model discovery
 
 | Endpoint | Handling |
@@ -236,16 +262,17 @@ What the app does instead: on a provider failure, it names the error, and the se
 | `StreamingParsed` | Unit — a real recorded response per kind produces the correct `AgentEvent` sequence | With the client |
 | `ToolCallAssembly` | Unit — fragmented JSON assembled and parsed once | With the client |
 | `UsageAccounting` | Unit — per kind, feeding `CostRecord` with the correct `isEstimated` | With the client |
-| `NoRetryAtClient` | Static — the provider client has no retry logic, asserted so a second retry layer cannot be added | With the client |
-| `TestSteps` | Integration — each connection-test step fails independently and reports itself, exhaustively | Next |
+| `TestSteps` | Integration — each connection-test step fails independently and reports itself, exhaustively | Done — `ProviderConnectionTest`, against a `MockEngine` |
 | `TestUntestedIsNotGreen` | UI — an untested provider shows a neutral state, never a check | Phase 4 |
 | `TestStreamingStep` | E2E — a provider that ignores the streaming flag is reported as "nicht gestreamt" | Phase 5 |
-| `DiscoveryShapes` | Unit — the three response shapes parse, and an unknown shape is not guessed at | With the client |
+| `DiscoveryShapes` | Unit — the three response shapes parse, and an unknown shape is not guessed at | Done — an unknown shape is skipped, and nothing is invented from it |
+| `DiscoveryFailureGraceful` | E2E — a server without `/v1/models` offers manual entry without an error state | Done — the step is skipped and the verdict stays `OK` |
 | `DiscoveryFailureGraceful` | E2E — a server without `/v1/models` offers manual entry without an error state | Phase 5 |
 | `DiscoveryMerge` | Unit — a manual entry survives a discovery run with the same id | With the client |
 | `KeyProfiles` | E2E — three profiles per provider, switchable, each testable | Phase 5 |
 | `KeyDeleteHonest` | UI — the confirmation states the app cannot know whether the key still exists at the provider | Phase 5 |
 | `NoFailover` | E2E — a provider failure never switches providers automatically | Phase 5 |
-| `MalformedBody` | E2E — an HTML error page from a proxy produces the "kein JSON" message with the first 200 characters | With the client |
-| `KeyNeverInClient` | Static — the provider client receives a `SecretRef`, never a key value; the key is resolved at the boundary | With the client |
+| `MalformedBody` | E2E — an HTML error page from a proxy produces the "kein JSON" message with the first 200 characters | Done — the snippet is bounded at 200 characters |
+| `KeyNeverInClient` | Static — the provider client receives a `SecretRef`, never a key value; the key is resolved at the boundary | Done — structural: the tester holds a `SecretResolver` and no `String` |
+| `NoRetryAtClient` | Static — the provider client has no retry logic, asserted so a second retry layer cannot be added | Done — five steps, five requests, no endpoint twice |
 | `TimeoutSeparation` | Unit — the streaming timeout differs from the request timeout, and a long turn is not killed | With the client |

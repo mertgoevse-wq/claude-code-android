@@ -8,6 +8,12 @@ sqlite = "2.7.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
 okhttp = "4.12.0"
+# Ktor 3.3.0 upgraded its own build to Kotlin 2.2 (KTOR-8647), and Ktor 3.6.0 is
+# published with Kotlin 2.3 metadata, which the Kotlin 2.1.20 compiler in this
+# project refuses to read. 3.2.3 is the last release before that upgrade, so it
+# is the newest Ktor this build can compile against. Raise it together with the
+# Kotlin version, never on its own.
+ktor = "3.2.3"
 retrofit = "2.11.0"
 datastore = "1.1.1"
 work = "2.9.1"
@@ -70,6 +76,9 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "okhttp-logging-interceptor", version.ref = "okhttp" }

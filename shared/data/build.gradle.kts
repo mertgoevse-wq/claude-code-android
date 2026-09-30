@@ -21,6 +21,15 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+
+    // The provider client. Ktor rather than raw OkHttp because a turn is
+    // server-sent events that must be parsed incrementally: a response is never
+    // buffered whole, because a streaming turn can be megabytes of deltas.
+    // OkHttp is the Android engine; the engine is injected so the tests can
+    // replace it with a MockEngine and never open a socket.
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+
     implementation(libs.datastore.preferences)
 
     // The DAO tests run as plain JVM tests on Room's KMP path with the
@@ -40,4 +49,5 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
 }
